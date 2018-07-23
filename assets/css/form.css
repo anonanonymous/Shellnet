@@ -1,0 +1,233 @@
+@import url(https://fonts.googleapis.com/css?family=Lato:400,700,900,300);
+#banner {
+  background-color:#191919;
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  font-family:'Lato';
+  padding:25px;
+  color:#F3F3F3;
+  font-size:20px;
+  font-weight:500;
+  text-align:center;
+  z-index:10;
+}
+
+#content {
+  position:relative;
+  top:200px;
+  text-align:center;
+  opacity:1;
+}
+.text_box_main {
+  width: 80%;
+  margin: auto;
+  margin-bottom:50px;
+  box-shadow:0px 4px 20px rgba(0, 0, 0, 0.15);
+  padding:10px;
+}
+.body_text_header {
+  color:#191919;
+  font-family:'Lato';
+  font-weight:700;
+  opacity:0.6;
+  border-style:groove;
+  border-top:none;
+  border-left:none;
+  border-right:none;
+  padding:24px;
+  width:100px;
+  margin:auto;
+  border-width:1px;
+}
+.body_text_tag {
+  color:#191919;
+  font-family:'Lato';
+  font-weight:700;
+  opacity:0.6;
+  font-size:14px;
+  padding:10px;
+  width:100px;
+  margin:auto;
+}
+.body_code_main {
+  padding:10px;
+  margin:10px;
+  display:inline-block
+}
+input[class|="simple_medium"] {
+  border-radius:5px;
+  padding:8px;
+  border-style:groove;
+  opacity:0.5;
+  font-family:'Lato';
+  font-weight:400;
+  font-size:15px;
+  position:relative;
+  margin:5px;
+}
+input[class|="simple_medium"]:focus {
+  outline:none;
+  opacity:0.7;
+}
+input[class|="simple_small"] {
+  border-radius:5px;
+  padding:5px;
+  border-style:groove;
+  opacity:0.5;
+  font-family:'Lato';
+  font-weight:400;
+  font-size:12px;
+  position:relative;
+  margin:5px;
+}
+input[class|="simple_small"]:focus {
+  outline:none;
+  opacity:0.7;
+}
+input[class|="simple_large"] {
+  border-radius:5px;
+  padding:10px;
+  width:240px;
+  overflow:hidden;
+  border-style:groove;
+  opacity:0.5;
+  font-family:'Lato';
+  font-weight:400;
+  font-size:16px;
+  position:relative;
+  margin:5px;
+}
+input[class|="simple_large"]:focus {
+  outline:none;
+  opacity:0.7;
+}
+input[class|="simple_large_info"] {
+  border-radius:5px;
+  background-color:#2c72ea;
+  border-color:#246be5;
+  color:#F3F3F3;
+  padding:10px;
+  width:240px;
+  overflow:hidden;
+  border-style:groove;
+  opacity:0.5;
+  font-family:'Lato';
+  font-weight:400;
+  font-size:16px;
+  position:relative;
+  margin:5px;
+}
+input[class|="simple_large_info"]:focus {
+  outline:none;
+  opacity:0.7;
+}
+input[class|="simple_large_submit"] {
+  border-radius:5px;
+  background-color:#0c541f;
+  border-color:#116b29;
+  color:#F3F3F3;
+  padding:10px;
+  width:240px;
+  overflow:hidden;
+  border-style:groove;
+  opacity:0.5;
+  font-family:'Lato';
+  font-weight:400;
+  font-size:16px;
+  position:relative;
+  margin:5px;
+}
+input[class|="simple_large_submit"]:focus {
+  outline:none;
+  opacity:0.7;
+}
+input[class|="simple_medium_info"] {
+  border-radius:5px;
+  background-color:#2c72ea;
+  border-color:#246be5;
+  color:#F3F3F3;
+  padding:8px;
+  width:130px;
+  overflow:hidden;
+  border-style:groove;
+  opacity:0.5;
+  font-family:'Lato';
+  font-weight:400;
+  font-size:16px;
+  position:relative;
+  margin:5px;
+}
+input[class|="simple_medium_info"]:focus {
+  outline:none;
+  opacity:0.7;
+}
+input[class|="simple_medium_submit"] {
+  border-radius:5px;
+  background-color:#0c541f;
+  border-color:#116b29;
+  color:#F3F3F3;
+  padding:10px;
+  width:130px;
+  overflow:hidden;
+  border-style:groove;
+  opacity:0.5;
+  font-family:'Lato';
+  font-weight:400;
+  font-size:16px;
+  position:relative;
+  margin:5px;
+}
+input[class|="simple_medium_submit"]:focus {
+  outline:none;
+  opacity:0.7;
+}
+input[class|="simple_medium"][type|="submit"] {
+  width:130px;
+}
+input[class|="simple_small_info"] {
+  border-radius:5px;
+  background-color:#2c72ea;
+  border-color:#246be5;
+  color:#F3F3F3;
+  padding:8px;
+  width:90px;
+  overflow:hidden;
+  border-style:groove;
+  opacity:0.5;
+  font-family:'Lato';
+  font-weight:400;
+  font-size:13px;
+  position:relative;
+  margin:5px;
+}
+input[class|="simple_small_info"]:focus {
+  outline:none;
+  opacity:0.7;
+}
+input[class|="simple_small_submit"] {
+  border-radius:5px;
+  background-color:#0c541f;
+  border-color:#116b29;
+  color:#F3F3F3;
+  padding:10px;
+  width:90px;
+  overflow:hidden;
+  border-style:groove;
+  opacity:0.5;
+  font-family:'Lato';
+  font-weight:400;
+  font-size:13px;
+  position:relative;
+  margin:5px;
+}
+input[class|="simple_small_submit"]:focus {
+  outline:none;
+  opacity:0.7;
+}
+input[class|="simple_small"][type|="submit"] {
+  font-size:13px;
+  width:90px;
+  padding:10px;
+}

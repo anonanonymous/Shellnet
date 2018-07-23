@@ -1,0 +1,28 @@
+{{ $host := "http://192.168.1.70:8080" }}
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" href="assets/images/fav_icon.ico" type="image/x-icon">
+        <link rel="stylesheet" href="https://unpkg.com/unnamed"/>
+        <title>Signup</title>
+    </head>
+    <body>
+        <div class="container">
+            <form action={{ printf "%s%s" $host "/signup" }} method="POST">
+                <div class="input-field green-input">
+                    <span class="user-icon"></span>
+                    <input type="text" name="username" placeholder="username" autofocus=""/>
+                </div>
+            
+                <div class="input-field green-input">
+                    <span class="caret-icon"></span>
+                    <input type="password" name="password" placeholder="password" />
+                </div>
+                <button class="btn btn-primary gradient-green">Signup</button>
+            </form>
+            <button class="btn btn-primary gradient-"><a href={{ printf "%s%s" $host "/login" }}>login</a></button>
+        </div>
+    </body>
+</html>
