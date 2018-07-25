@@ -1,53 +1,9 @@
 {{ template "header" }}
-	<div id="project_header">
-	  <p class="main_header">Form CSS</p>
-	  <p class="main_subheader">{{ if .User }}{{ .User.Username }}{{end}}</p>
-	</div>
-	<div id="content">
-	  <div class="text_box_main">
-	   <p class="body_text_header">Form Inputs</p>
-	   <div class="body_code_main">
-		 <p class="body_text_tag">Large</p>
-		 <form>
-		   <input class="simple_large" value="Username"></input><br>
-		   <input class="simple_large" value="Password" type="password"></input><br>
-		   <input class="simple_large" value="Email"></input><br>
-		 </form>
-		 <p class="body_text_tag">Medium</p>
-		 <form>
-		   <input class="simple_medium" value="Username"></input><br>
-		   <input class="simple_medium" value="Password" type="password"></input><br>
-		   <input class="simple_medium" value="Email"></input><br>
-		 </form>
-		 <p class="body_text_tag">Small</p>
-		 <form>
-		   <input class="simple_small" value="Username"></input><br>
-		   <input class="simple_small" value="Password" type="password"></input><br>
-		   <input class="simple_small" value="Email"></input><br>
-		 </form>
-		</div>
-	  </div>
-	  <div class="text_box_main">
-	   <p class="body_text_header">Form Buttons</p>
-	   <div class="body_code_main">
-		 <p class="body_text_tag">Large</p>
-		 <form>
-		   <input type="submit" class="simple_large_info" value="Info"></input>
-		   <input type="submit" class="simple_large_submit" value="Submit"></input>
-		   <input type="submit" class="simple_large" value="Simple"></input>
-		 </form>
-		 <p class="body_text_tag">Medium</p>
-		 <form>
-		   <input type="submit" class="simple_medium_info" value="Info"></input><br>
-		   <input type="submit" class="simple_medium_submit" value="Submit"></input><br>
-		   <input type="submit" class="simple_medium" value="Simple"></input><br>
-		 </form>
-		 <p class="body_text_tag">Small</p>
-		 <form>
-		   <input type="submit" class="simple_small_info" value="Info"></input><br>
-		   <input type="submit" class="simple_small_submit" value="Submit"></input><br>
-		   <input type="submit" class="simple_small" value="Simple"></input><br>
-		 </form>
-		</div>
-	  </div>
-	</div>
+<h1 class="title gradient-orange center-text"><code>SHELLNET</code></h1>
+  <h1>Welcome to Shellnet{{ if .User }}, {{ .User.Username }}{{ end }}</h1>
+  {{ if .User }}
+  <h5>go to <a href="/account">account</a> or <a href="/logout">logout</a></h5>
+  {{ else }}
+  <h5>please <a href="/login">login</a> or <a href="/signup">create an account</a></h5>
+  {{ end }}
+{{ template "footer" }}

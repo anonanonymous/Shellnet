@@ -4,8 +4,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 )
+
+type walletAddress struct {
+	Result struct {
+		Addresses []string
+	} `json:"result"`
+}
 
 // InternalServerError - handle internal server errors
 func InternalServerError(res http.ResponseWriter, req *http.Request, err error) bool {
@@ -35,10 +42,13 @@ func isRegistered(username string) bool {
 func getUser(username string) (*user, error) {
 	row := db.QueryRow("SELECT * FROM accounts WHERE username = $1;", username)
 	usr := user{}
-	err := row.Scan(&usr.IH, &usr.Verifier, &usr.Username, &usr.ID)
+	err := row.Scan(&usr.IH, &usr.Verifier, &usr.Username, &usr.ID, &usr.Address)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return nil, err
+	}
+	if usr.Address == "" {
+
 	}
 	fmt.Println(usr)
 	return &usr, nil
@@ -57,7 +67,7 @@ func sessionGetKey(key string) (string, error) {
 }
 
 func sessionSetKey(key, val string) error {
-	_, err := sessionDB.Do("SET", key, val)
+	_, err := sessionDB.Do("SET", key, val, "EX", 1512000)
 	if err != nil {
 		return err
 	}
@@ -70,4 +80,18 @@ func sessionDelKey(key string) error {
 		return err
 	}
 	return nil
+}
+
+// executes a wallet command and returns the result
+func walletCmd(cmd, sessID string) []byte {
+	resb, err := http.Get(host + ":8082/" + cmd + "/" + sessID)
+	if err != nil {
+		return nil
+	}
+	defer resb.Body.Close()
+	bs, err := ioutil.ReadAll(resb.Body)
+	if err != nil {
+		return nil
+	}
+	return bs
 }

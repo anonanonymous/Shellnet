@@ -12,6 +12,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/microcosm-cc/bluemonday"
+
 	_ "github.com/lib/pq"
 
 	"github.com/gomodule/redigo/redis"
@@ -25,8 +27,8 @@ const port = ":8081"
 const dbuser = "dsanon"
 const dbpwd = "86a8c07323ea5e56dc8e8ed70191a04cea0c2daa7030993d01d8ba3e64076bc2"
 
+var sanitizer *bluemonday.Policy
 var sessionDB redis.Conn
-var userDB = map[string]user{}
 var nBits = 1024
 var srpEnv *srp.SRP
 var db *sql.DB
@@ -36,11 +38,14 @@ type user struct {
 	IH       string
 	Username string
 	Verifier string
+	Address  string
 }
 
 type jsonResponse struct {
 	Status string
 	Cookie *http.Cookie
+	User   user
+	Data   string
 }
 
 func init() {
@@ -49,6 +54,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	sanitizer = bluemonday.StrictPolicy()
 
 	sessionDB, err = redis.Dial("tcp", ":6379")
 	if err != nil {
@@ -67,10 +73,11 @@ func init() {
 
 func main() {
 	router := httprouter.New()
+	router.GET("/user/:username", userByName)
 	router.GET("/logout", logout)
 	router.POST("/signup", signup)
 	router.POST("/login", login)
-	router.DELETE("/users/:username", deleteUser)
+	router.DELETE("/user/:username", deleteUser)
 	log.Fatal(http.ListenAndServe(port, router))
 }
 
@@ -80,7 +87,6 @@ func signup(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	encoder := json.NewEncoder(res)
 	username := req.FormValue("username")
 	password := req.FormValue("password")
-	//  ./walletd -g -w '#!<uname>' -p '<pwd>'
 	if isRegistered(username) {
 		encoder.Encode(jsonResponse{Status: "Username taken"})
 		return
@@ -116,7 +122,7 @@ func signup(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	// sponge
 	fmt.Printf("v: %s, ih: %s\n", verif, ih)
 
-	_, err = db.Exec("INSERT INTO accounts (ih, verifier, username) VALUES ($1, $2, $3);", ih, verif, username)
+	_, err = db.Exec("INSERT INTO accounts (ih, verifier, username, address) VALUES ($1, $2, $3, $4);", ih, verif, username, response.Data)
 	if err != nil {
 		encoder.Encode(jsonResponse{Status: err.Error()})
 		return
@@ -154,7 +160,7 @@ func login(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	}
 
 	if usr.IH != ih {
-		encoder.Encode(jsonResponse{Status: "ID's didn't match"})
+		encoder.Encode(jsonResponse{Status: "IH's didn't match"})
 		return
 	}
 
@@ -206,11 +212,12 @@ func login(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 // remove user session from session db and remove user cookie
 func logout(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	cookie, _ := req.Cookie("session")
+	username, _ := sessionGetKey(cookie.Value)
 	err := sessionDelKey(cookie.Value)
 	if InternalServerError(res, req, err) {
 		return
 	}
-
+	sessionDelKey(username + cookie.Value)
 	cookie = &http.Cookie{
 		Name:   "session",
 		Value:  "",
@@ -227,15 +234,29 @@ func deleteUser(res http.ResponseWriter, req *http.Request, p httprouter.Params)
 		http.Error(res, "Not logged in", http.StatusForbidden)
 		return
 	}
+	encoder := json.NewEncoder(res)
 	cookie, _ := req.Cookie("session")
 	username, err := sessionGetKey(cookie.Value)
 	if err != nil {
-		http.Error(res, "Error with cookie", http.StatusForbidden)
+		encoder.Encode(jsonResponse{Status: "Error with cookie"})
 		return
 	}
 
 	sessionDelKey(cookie.Value)
+	sessionDelKey(username)
 	db.Exec("DELETE FROM accounts WHERE username = $1;", username)
 
-	http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+	encoder.Encode(jsonResponse{Status: "OK"})
+}
+
+// retrieve a user given the username
+func userByName(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
+	usr, err := getUser(p.ByName("username"))
+	encoder := json.NewEncoder(res)
+	if err != nil {
+		encoder.Encode(jsonResponse{Status: err.Error()})
+		return
+	}
+	usr.Username = sanitizer.Sanitize(usr.Username)
+	encoder.Encode(jsonResponse{Status: "OK", User: *usr})
 }

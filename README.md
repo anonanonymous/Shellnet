@@ -1,4 +1,4 @@
-# ShellSafe
+# Shellnet
 
 ## Todo
 * Finish walletd integration

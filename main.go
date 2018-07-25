@@ -1,9 +1,9 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -26,15 +26,43 @@ const dbpwd = "86a8c07323ea5e56dc8e8ed70191a04cea0c2daa7030993d01d8ba3e64076bc2"
 var sessionDB redis.Conn
 var templates *template.Template
 var sanitizer *bluemonday.Policy
-var db *sql.DB
 
 type jsonResponse struct {
 	Status string
 	Cookie *http.Cookie
+	User   userInfo
+}
+
+type status struct {
+	Result struct {
+		BlockCount      int    `json:"blockCount"`
+		KnownBlockCount int    `json:"knownBlockCount"`
+		LastBlockHash   string `json:"lastBlockHash"`
+		PeerCount       int    `json:"peerCount"`
+	} `json:"result"`
+}
+
+type balance struct {
+	Result struct {
+		AvailableBalance int `json:"availableBalance"`
+		LockedAmount     int `json:"lockedAmount"`
+	} `json:"result"`
+}
+
+type transaction struct {
+	Result struct {
+		TransactionHash string `json:"transactionHash"`
+	} `json:"result"`
+}
+
+type walletInfo struct {
+	Balance balance
+	Status  status
 }
 
 type userInfo struct {
 	Username string
+	Address  string
 }
 
 type pageInfo struct {
@@ -47,13 +75,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	db, err = sql.Open("postgres", "postgres://"+dbuser+":"+dbpwd+"@localhost/users?sslmode=disable")
-	if err != nil {
-		panic(err)
-	}
-	if err = db.Ping(); err != nil {
-		panic(err)
-	}
 	sanitizer = bluemonday.StrictPolicy()
 	templates = template.Must(template.ParseGlob("templates/*.html"))
 }
@@ -62,10 +83,14 @@ func main() {
 	router := httprouter.New()
 	router.GET("/", index)
 	router.GET("/signup", signupPage)
+	router.GET("/account", accountPage)
 	router.POST("/signup", signupHandler)
 	router.GET("/login", loginPage)
 	router.GET("/logout", logoutHandler)
+	router.POST("/delete", deleteHandler)
 	router.POST("/login", loginHandler)
+	router.POST("/send_transaction", sendHandler)
+	router.GET("/wallet", getWalletInfo)
 	router.Handler(http.MethodGet, "/assets/*filepath", http.StripPrefix("/assets", http.FileServer(http.Dir("./assets"))))
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
@@ -73,14 +98,66 @@ func main() {
 func index(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	var err error
 	if alreadyLoggedIn(req) {
-		usr := getUserInfo(req)
+		cookie, _ := req.Cookie("session")
+		username, err := sessionGetKey(cookie.Value)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		resb, err := http.Get(host + ":8081/user/" + username)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer resb.Body.Close()
+		bs, err := ioutil.ReadAll(resb.Body)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		response := jsonResponse{}
+		json.Unmarshal(bs, &response)
+		response.User.Username = sanitizer.Sanitize(response.User.Username)
 		data := struct {
 			User userInfo
-		}{User: usr}
+		}{User: response.User}
 		err = templates.ExecuteTemplate(res, "index.html", data)
 	} else {
 		err = templates.ExecuteTemplate(res, "index.html", nil)
 	}
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func accountPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	if !alreadyLoggedIn(req) {
+		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		return
+	}
+	cookie, _ := req.Cookie("session")
+	username, err := sessionGetKey(cookie.Value)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	resb, err := http.Get(host + ":8081/user/" + username)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resb.Body.Close()
+	bs, err := ioutil.ReadAll(resb.Body)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	response := jsonResponse{}
+	json.Unmarshal(bs, &response)
+	data := struct {
+		User userInfo
+	}{User: response.User}
+	err = templates.ExecuteTemplate(res, "account.html", data)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 	}
@@ -91,7 +168,10 @@ func signupPage(res http.ResponseWriter, req *http.Request, p httprouter.Params)
 		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
 		return
 	}
-	err := templates.ExecuteTemplate(res, "signup.html", nil)
+	data := struct {
+		PageAttr pageInfo
+	}{pageInfo{Element: "signup"}}
+	err := templates.ExecuteTemplate(res, "login.html", data)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
@@ -103,7 +183,10 @@ func loginPage(res http.ResponseWriter, req *http.Request, p httprouter.Params) 
 		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
 		return
 	}
-	err := templates.ExecuteTemplate(res, "login.html", nil)
+	data := struct {
+		PageAttr pageInfo
+	}{pageInfo{Element: "login"}}
+	err := templates.ExecuteTemplate(res, "login.html", data)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
@@ -113,30 +196,15 @@ func loginPage(res http.ResponseWriter, req *http.Request, p httprouter.Params) 
 // handle logins
 func loginHandler(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	if alreadyLoggedIn(req) {
-		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		http.Redirect(res, req, host+":8080/account", http.StatusSeeOther)
 		return
 	}
 	username := req.FormValue("username")
 	password := req.FormValue("password")
-	resb, err := http.PostForm(host+":8081/login",
-		url.Values{
-			"username": {username},
-			"password": {password},
-		})
-	if InternalServerError(res, req, err) {
-		return
-	}
-	defer resb.Body.Close()
 
-	bs, err := ioutil.ReadAll(resb.Body)
-	if InternalServerError(res, req, err) {
-		return
-	}
-
-	var response jsonResponse
-	err = json.Unmarshal(bs, &response)
-	if err != nil || response.Status != "OK" {
-		http.Error(res, response.Status, http.StatusInternalServerError)
+	response, err := tryAuth(username, password, "login")
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusForbidden)
 		return
 	}
 
@@ -146,27 +214,42 @@ func loginHandler(res http.ResponseWriter, req *http.Request, p httprouter.Param
 		return
 	}
 
-	resb, err = http.PostForm(host+":8082/start",
-		url.Values{
-			"filename": {username},
-			"password": {password},
-		})
-	if InternalServerError(res, req, err) {
-		return
-	}
-	defer resb.Body.Close()
-	bs, err = ioutil.ReadAll(resb.Body)
-	if InternalServerError(res, req, err) {
-		return
-	}
-
-	err = json.Unmarshal(bs, &response)
-	if err != nil || response.Status != "OK" {
-		http.Error(res, response.Status, http.StatusInternalServerError)
+	_, err = startWallet(username, password, response.Cookie.Value)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	http.SetCookie(res, response.Cookie)
+	http.Redirect(res, req, host+":8080/account", http.StatusSeeOther)
+}
+
+func deleteHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	if !alreadyLoggedIn(req) {
+		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		return
+	}
+	resb, err := http.Get(host + ":8081/delete")
+	if err != nil {
+		return
+	}
+	defer resb.Body.Close()
+	bs, err := ioutil.ReadAll(resb.Body)
+	if err != nil {
+		return
+	}
+	var response jsonResponse
+	json.Unmarshal(bs, &response)
+	if response.Status != "OK" {
+		http.Error(res, response.Status, http.StatusForbidden)
+		return
+	}
+	cookie := &http.Cookie{
+		Name:   "session",
+		Value:  "",
+		MaxAge: -1,
+	}
+	http.SetCookie(res, cookie)
 	http.Redirect(res, req, host+":8080", http.StatusSeeOther)
 }
 
@@ -186,14 +269,14 @@ func logoutHandler(res http.ResponseWriter, req *http.Request, p httprouter.Para
 		Value:  "",
 		MaxAge: -1,
 	}
-	http.SetCookie(res, cookie)
 
+	http.SetCookie(res, cookie)
 	http.Redirect(res, req, host+":8080", http.StatusSeeOther)
 }
 
-func signupHandler(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
+func signupHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	if alreadyLoggedIn(req) {
-		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		http.Redirect(res, req, host+":8080/account", http.StatusSeeOther)
 		return
 	}
 	username := req.FormValue("username")
@@ -202,29 +285,65 @@ func signupHandler(res http.ResponseWriter, req *http.Request, p httprouter.Para
 		InternalServerError(res, req, errors.New("Incorrect Username/Password format"))
 		return
 	}
-	resb, err := http.PostForm(host+":8081/signup",
-		url.Values{"username": {username}, "password": {password}})
-	if InternalServerError(res, req, err) {
-		return
-	}
-	defer resb.Body.Close()
-	bs, err := ioutil.ReadAll(resb.Body)
-	if InternalServerError(res, req, err) {
-		return
-	}
-	var response jsonResponse
-	err = json.Unmarshal(bs, &response)
-	if err != nil || response.Status != "OK" {
-		http.Error(res, response.Status, http.StatusForbidden)
+	_, err := tryAuth(username, password, "signup")
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusForbidden)
 		return
 	}
 	http.Redirect(res, req, host+":8080/login", http.StatusSeeOther)
 }
 
-func getUserInfo(req *http.Request) userInfo {
-	info := userInfo{}
-	if c, err := req.Cookie("session"); err == nil {
-		info.Username, _ = sessionGetKey(c.Value)
+func getWalletInfo(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	if !alreadyLoggedIn(req) {
+		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		return
 	}
-	return info
+	wallet := walletInfo{}
+	cookie, _ := req.Cookie("session")
+
+	json.Unmarshal(walletCmd("status", cookie.Value), &wallet.Status)
+	json.Unmarshal(walletCmd("balance", cookie.Value), &wallet.Balance)
+	json.NewEncoder(res).Encode(wallet)
+}
+
+func sendHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	if !alreadyLoggedIn(req) {
+		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		return
+	}
+	cookie, _ := req.Cookie("session")
+	username, err := sessionGetKey(cookie.Value)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	resb, err := http.Get(host + ":8081/user/" + username)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resb.Body.Close()
+	bs, err := ioutil.ReadAll(resb.Body)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	response := jsonResponse{}
+	json.Unmarshal(bs, &response)
+	resb, err = http.PostForm(host+":8082/send_transaction",
+		url.Values{
+			"amount":      {req.FormValue("amount")},
+			"address":     {response.User.Address},
+			"destination": {req.FormValue("destination")},
+			"payment_id":  {req.FormValue("payment_id")},
+		})
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resb.Body.Close()
+	bs, err = ioutil.ReadAll(resb.Body)
+	tx := transaction{}
+	json.Unmarshal(bs, &tx)
+	fmt.Println(tx.Result.TransactionHash)
 }
