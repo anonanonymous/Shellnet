@@ -3,11 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"regexp"
 	"strconv"
 
@@ -17,160 +15,102 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-var cwd string
-var wallet string
-var sessionDB redis.Conn
+const port = 8070
 
-type jsonResponse struct {
-	Status string
-	Data   string
-}
-
-var ports = map[int]string{}
+var rpcPwd string
+var walletDB *redis.Pool
 
 func init() {
-	var err error
-	cwd, err = os.Getwd()
-	if err != nil {
-		panic(err)
+	redisHost := os.Getenv("REDIS_HOST")
+	if redisHost == "" {
+		redisHost = ":6379"
 	}
-	wallet = cwd + "/walletd"
-	sessionDB, err = redis.Dial("tcp", ":6379")
-	if err != nil {
-		panic(err)
+	rpcPwd = os.Getenv("RPC_PWD")
+	if rpcPwd == "" {
+		panic("Set the RPC_PWD env variable")
 	}
+	walletDB = newPool(redisHost)
+	cleanupHook()
 }
 
 func main() {
 	router := httprouter.New()
-	router.POST("/start", startWallet)
-	//router.GET("/stop", stopWallet)
-	router.GET("/balance/:session_id", getBalance)
-	router.GET("/address/:session_id", getAddress)
-	router.GET("/status/:session_id", getStatus)
-	router.POST("/create", createWallet)
-	router.POST("/send_transaction/:session_id", sendTransaction)
+	router.GET("/status/:address", getStatus)
+	router.GET("/address", getAddress)
+	router.POST("/send_transaction", sendTransaction)
 	log.Fatal(http.ListenAndServe(":8082", router))
 }
 
-func createWallet(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	encoder := json.NewEncoder(res)
-	fname := req.FormValue("filename")
-	pwd := req.FormValue("password")
-	bytes, err := exec.Command(wallet, "-g", "-w", "wallets/"+fname, "-p", pwd).Output()
-	if err != nil {
-		encoder.Encode(jsonResponse{Status: err.Error()})
-	} else {
-		re := regexp.MustCompile("(TRTL)[a-zA-Z0-9]{95}")
-		address := re.FindString(string(bytes))
-		encoder.Encode(jsonResponse{Status: "OK", Data: address})
-	}
+// createWallets - creates a new wallet
+func createWallet() (string, error) {
+	response := map[string]interface{}{}
+	walletdResponse := walletd.CreateAddress(
+		rpcPwd,
+		"localhost",
+		port,
+	)
+	json.NewDecoder(walletdResponse).Decode(&response)
+	address := response["result"].(map[string]interface{})["address"].(string)
+	return address, nil
 }
 
-/* start running the users wallet node*/
-func startWallet(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
+// getAddress - gets an address for a new user
+func getAddress(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	encoder := json.NewEncoder(res)
-	fname := req.FormValue("filename")
-	pwd := req.FormValue("password")
-	rpc := req.FormValue("rpc_password")
-
-	port := ""
-	for i := 8090; i < 65000; i++ {
-		if _, err := sessionGetKey(strconv.Itoa(i)); err != nil {
-			sessionSetKey(strconv.Itoa(i), "active")
-			port = strconv.Itoa(i)
-			break
-		}
-	}
-	conf := []byte(
-		"container-file=wallets/" + fname +
-			"\ncontainer-password=" + pwd +
-			"\nrpc-password=" + rpc +
-			"\nbind-port=" + port +
-			"\ndaemon-address=us-west.turtlenode.io",
-	)
-	fmt.Println(fname, port, pwd, "\n", string(conf))
-	err := ioutil.WriteFile("/tmp/"+fname, conf, 0644)
+	address, err := createWallet()
 	if err != nil {
 		encoder.Encode(jsonResponse{Status: err.Error()})
-		os.Remove("/tmp/" + fname)
 		return
 	}
-	cmd := exec.Command(wallet, "-c", "/tmp/"+fname, "-d")
-	err = cmd.Run()
-	os.Remove("/tmp/" + fname)
-	if err != nil {
-		encoder.Encode(jsonResponse{Status: err.Error()})
-	} else {
-		encoder.Encode(jsonResponse{Status: "OK"})
-	}
-	sessionSetKey(fname+rpc, port)
+	data := map[string]interface{}{"address": address}
+	encoder.Encode(jsonResponse{Status: "OK", Data: data})
 }
 
-func getBalance(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	sessID := p.ByName("session_id")
-	fname, _ := sessionGetKey(sessID)
-	temp, _ := sessionGetKey(fname + sessID)
-	port, _ := strconv.Atoi(temp)
-	walletdResponse := walletd.GetBalance(
-		sessID,
-		"localhost",
-		port,
-		"",
-	)
-	walletdResponse.WriteTo(res)
-}
-
+// getStatus - gets the balance and status of a wallet
 func getStatus(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	sessID := p.ByName("session_id")
-	fname, _ := sessionGetKey(sessID)
-	temp, _ := sessionGetKey(fname + sessID)
-	port, _ := strconv.Atoi(temp)
-	walletdResponse := walletd.GetStatus(
-		sessID,
+	address := p.ByName("address")
+	response := jsonResponse{Data: map[string]interface{}{}}
+	temp := make(map[string]interface{}, 1)
+	walletdResponse := walletd.GetBalance(
+		rpcPwd,
+		"localhost",
+		port,
+		address,
+	)
+	json.NewDecoder(walletdResponse).Decode(&temp)
+	response.Data["balance"] = temp["result"]
+	walletdResponse = walletd.GetStatus(
+		rpcPwd,
 		"localhost",
 		port,
 	)
-	walletdResponse.WriteTo(res)
+	json.NewDecoder(walletdResponse).Decode(&temp)
+	response.Data["status"] = temp["result"]
+	json.NewEncoder(res).Encode(response)
 }
 
-func getAddress(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	sessID := p.ByName("session_id")
-	fname, _ := sessionGetKey(sessID)
-	temp, _ := sessionGetKey(fname + sessID)
-	port, _ := strconv.Atoi(temp)
-	walletdResponse := walletd.GetAddresses(
-		sessID,
-		"localhost",
-		port,
-	)
-	walletdResponse.WriteTo(res)
-}
-
-func sendTransaction(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
+// sendTransaction - sends a transaction from address to dest
+func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	dest := req.FormValue("destination")
 	amountStr := req.FormValue("amount")
 	paymentID := req.FormValue("payment_id")
 	address := req.FormValue("address")
+	response := jsonResponse{}
 	if matched, _ := regexp.MatchString("^(TRTL)[a-zA-Z0-9]{95}$", dest); !matched {
-		panic("Incorrect Address Format")
+		json.NewEncoder(res).Encode(jsonResponse{Status: "Incorrect Address Format"})
 		return
 	}
 	if matched, _ := regexp.MatchString("^[0-9]+\\.{0,1}[0-9]{0,2}$", amountStr); !matched {
-		panic("Incorrect Amount Format")
+		json.NewEncoder(res).Encode(jsonResponse{Status: "Incorrect Amount Format"})
 		return
 	}
-	if matched, _ := regexp.MatchString("^[a-fA-F0-9]{64}$", paymentID); !matched {
-		panic("Incorrect Payment Id Format")
+	if matched, _ := regexp.MatchString("^[a-fA-F0-9]{64}$", paymentID); !matched && paymentID != "" {
+		json.NewEncoder(res).Encode(jsonResponse{Status: "Incorrect Payment ID Format"})
 		return
 	}
-	amount, _ := strconv.Atoi(amountStr)
-	sessID := p.ByName("session_id")
-	fname, _ := sessionGetKey(sessID)
-	temp, _ := sessionGetKey(fname + sessID)
-	port, _ := strconv.Atoi(temp)
+	amount, _ := strconv.ParseFloat(amountStr, 10)
 	walletdResponse := walletd.SendTransaction(
-		sessID,
+		rpcPwd,
 		"localhost",
 		port,
 		[]string{address},
@@ -187,17 +127,9 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, p httprouter.Pa
 		paymentID,
 		"", // change address
 	)
-	walletdResponse.WriteTo(res)
+	fmt.Println(amount, address, port, dest, paymentID)
+	fmt.Printf("%v\n", walletdResponse)
+	response.Status = "OK"
+	json.NewDecoder(walletdResponse).Decode(&response.Data)
+	json.NewEncoder(res).Encode(response)
 }
-
-/*
-func getWalletPid(name string) []string {
-	cmd := "ps ax | grep /tmp/"+name+" cut -f1 -d' '"
-	output, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
-		return
-	}
-	pids := strings.Split(string(output), "\n")
-	return pids
-}
-*/

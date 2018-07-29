@@ -6,11 +6,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
-	"time"
 
 	"github.com/microcosm-cc/bluemonday"
 
@@ -41,13 +38,6 @@ type user struct {
 	Address  string
 }
 
-type jsonResponse struct {
-	Status string
-	Cookie *http.Cookie
-	User   user
-	Data   string
-}
-
 func init() {
 	var err error
 	srpEnv, err = srp.New(nBits)
@@ -73,17 +63,15 @@ func init() {
 
 func main() {
 	router := httprouter.New()
-	router.GET("/user/:username", userByName)
-	router.GET("/logout", logout)
 	router.POST("/signup", signup)
 	router.POST("/login", login)
 	router.DELETE("/user/:username", deleteUser)
 	log.Fatal(http.ListenAndServe(port, router))
 }
 
-// adds user to db
-func signup(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	// todo sanitize input sanitize(s string)
+// signup - adds user to db
+func signup(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	// todo sanitize input
 	encoder := json.NewEncoder(res)
 	username := req.FormValue("username")
 	password := req.FormValue("password")
@@ -97,40 +85,25 @@ func signup(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 		encoder.Encode(jsonResponse{Status: err.Error()})
 		return
 	}
-
 	ih, verif := v.Encode()
-	resb, err := http.PostForm(host+":8082/create",
-		url.Values{
-			"filename": {username},
-			"password": {password},
-		})
-	if InternalServerError(res, req, err) {
-		return
-	}
-	defer resb.Body.Close()
-	bs, err := ioutil.ReadAll(resb.Body)
-	if InternalServerError(res, req, err) {
-		return
-	}
-
-	var response jsonResponse
-	err = json.Unmarshal(bs, &response)
-	if err != nil || response.Status != "OK" {
-		http.Error(res, response.Status, http.StatusInternalServerError)
-		return
-	}
 	// sponge
 	fmt.Printf("v: %s, ih: %s\n", verif, ih)
-
-	_, err = db.Exec("INSERT INTO accounts (ih, verifier, username, address) VALUES ($1, $2, $3, $4);", ih, verif, username, response.Data)
+	resb, err := http.Get(host + ":8082/address")
 	if err != nil {
 		encoder.Encode(jsonResponse{Status: err.Error()})
 		return
 	}
-	encoder.Encode(jsonResponse{Status: "OK"})
+	response, err := decodeResponse(resb)
+	address := response["Data"].(map[string]interface{})["address"].(string)
+	_, err = db.Exec("INSERT INTO accounts (ih, verifier, username, address) VALUES ($1, $2, $3, 4);", ih, verif, username, address)
+	if err != nil {
+		encoder.Encode(jsonResponse{Status: err.Error()})
+	} else {
+		encoder.Encode(jsonResponse{Status: "OK"})
+	}
 }
 
-// login a user
+// login - verify username/password and sends back a cookie
 func login(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	encoder := json.NewEncoder(res)
 	//todo verify that input is utf-8
@@ -138,10 +111,7 @@ func login(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	password := req.FormValue("password")
 	usr, err := getUser(username)
 	if err != nil {
-		err = encoder.Encode(jsonResponse{Status: "Username not found"})
-		if err != nil {
-			fmt.Println(err.Error())
-		}
+		encoder.Encode(jsonResponse{Status: "Username not found"})
 		return
 	}
 
@@ -198,65 +168,17 @@ func login(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 		return
 	}
 
-	cookie := &http.Cookie{
-		Name:     "session",
-		Value:    hex.EncodeToString(A.Bytes()),
-		Path:     "/",
-		HttpOnly: true,
-		Expires:  time.Now().Add(time.Hour * 420),
-	}
-
-	encoder.Encode(jsonResponse{Status: "OK", Cookie: cookie})
+	data := map[string]interface{}{
+		"sessionID": hex.EncodeToString(A.Bytes()),
+		"address":   usr.Address}
+	encoder.Encode(jsonResponse{Status: "OK", Data: data})
 }
 
-// remove user session from session db and remove user cookie
-func logout(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	cookie, _ := req.Cookie("session")
-	username, _ := sessionGetKey(cookie.Value)
-	err := sessionDelKey(cookie.Value)
-	if InternalServerError(res, req, err) {
-		return
-	}
-	sessionDelKey(username + cookie.Value)
-	cookie = &http.Cookie{
-		Name:   "session",
-		Value:  "",
-		MaxAge: -1,
-	}
-	http.SetCookie(res, cookie)
-
-	http.Redirect(res, req, host+":8080", http.StatusSeeOther)
-}
-
-// delete user from db
+// deleteUser - removes user from db, deletes user address from container
 func deleteUser(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	if !alreadyLoggedIn(req) {
-		http.Error(res, "Not logged in", http.StatusForbidden)
-		return
-	}
 	encoder := json.NewEncoder(res)
-	cookie, _ := req.Cookie("session")
-	username, err := sessionGetKey(cookie.Value)
-	if err != nil {
-		encoder.Encode(jsonResponse{Status: "Error with cookie"})
-		return
-	}
 
-	sessionDelKey(cookie.Value)
-	sessionDelKey(username)
-	db.Exec("DELETE FROM accounts WHERE username = $1;", username)
+	db.Exec("DELETE FROM accounts WHERE username = $1;", p.ByName("username"))
 
 	encoder.Encode(jsonResponse{Status: "OK"})
-}
-
-// retrieve a user given the username
-func userByName(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	usr, err := getUser(p.ByName("username"))
-	encoder := json.NewEncoder(res)
-	if err != nil {
-		encoder.Encode(jsonResponse{Status: err.Error()})
-		return
-	}
-	usr.Username = sanitizer.Sanitize(usr.Username)
-	encoder.Encode(jsonResponse{Status: "OK", User: *usr})
 }

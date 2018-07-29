@@ -2,16 +2,24 @@ package main
 
 import (
 	"database/sql"
-	"errors"
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 )
 
-type walletAddress struct {
-	Result struct {
-		Addresses []string
-	} `json:"result"`
+type jsonResponse struct {
+	Status string
+	Data   map[string]interface{}
+}
+
+// decodeResponse - decodes the json data from a Response
+func decodeResponse(resb *http.Response) (map[string]interface{}, error) {
+	response := map[string]interface{}{}
+	err := json.NewDecoder(resb.Body).Decode(&response)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 // InternalServerError - handle internal server errors
@@ -23,22 +31,14 @@ func InternalServerError(res http.ResponseWriter, req *http.Request, err error) 
 	return false
 }
 
-// check if user is already logged in
-func alreadyLoggedIn(req *http.Request) bool {
-	c, err := req.Cookie("session")
-	if err != nil {
-		return false
-	}
-	_, err = sessionGetKey(c.Value)
-	return err == nil
-}
-
+// isRegistered - check if username is already present in the database
 func isRegistered(username string) bool {
 	row := db.QueryRow("SELECT * FROM accounts WHERE username = $1;", username)
 	err := row.Scan()
 	return err != sql.ErrNoRows
 }
 
+// getUser - retrieves a user from the database
 func getUser(username string) (*user, error) {
 	row := db.QueryRow("SELECT * FROM accounts WHERE username = $1;", username)
 	usr := user{}
@@ -47,51 +47,6 @@ func getUser(username string) (*user, error) {
 		fmt.Println("err: ", err)
 		return nil, err
 	}
-	if usr.Address == "" {
-
-	}
 	fmt.Println(usr)
 	return &usr, nil
-}
-
-func sessionGetKey(key string) (string, error) {
-	reply, err := sessionDB.Do("GET", key)
-	if err != nil {
-		return "", err
-	}
-	if reply == nil {
-		return "", errors.New("Key not found")
-	}
-	username := string(reply.([]byte))
-	return username, nil
-}
-
-func sessionSetKey(key, val string) error {
-	_, err := sessionDB.Do("SET", key, val, "EX", 1512000)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func sessionDelKey(key string) error {
-	_, err := sessionDB.Do("DEL", key)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// executes a wallet command and returns the result
-func walletCmd(cmd, sessID string) []byte {
-	resb, err := http.Get(host + ":8082/" + cmd + "/" + sessID)
-	if err != nil {
-		return nil
-	}
-	defer resb.Body.Close()
-	bs, err := ioutil.ReadAll(resb.Body)
-	if err != nil {
-		return nil
-	}
-	return bs
 }

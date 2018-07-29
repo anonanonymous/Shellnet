@@ -5,13 +5,13 @@
   <div id="wallet_status">
     <span class="caret-icon"></span>&nbsp;status<span>
   </div>
-  <strong>Block:&nbsp;</strong><span id="block_count"></span>
+  <strong>Block:&nbsp;</strong><span id="block_count">{{ index .Wallet "status" "blockCount"}}</span>
   <h1>Wallet Info</h1>
   <table>
     <tbody>
       <tr>
         <td data-column-label="Name"><span>{{ .User.Username }}</span></td>
-        <td data-column-label="Balance"><span id="wallet_balance"><noscript>big benis</noscript></span></td>
+        <td data-column-label="Balance"><span id="wallet_balance">{{ index .Wallet "balance" "availableBalance" }}</span></td>
         <td data-column-label="Address"><span>{{ .User.Address }}</span></td>
       </tr>
     </tbody>
@@ -24,7 +24,7 @@
       <span class="caret-icon"></span>
       <input type="text" name="destination" placeholder="Enter destination address..." pattern="^(TRTL)[a-zA-Z0-9]{95}$" required/>
       <span class="caret-icon"></span>
-      <input type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.\d{0,2}$" required/>
+      <input type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.{0,1}\d{0,2}$" required/>
       <span class="caret-icon"></span>
       <input type="text" name="payment_id" placeholder="Enter Payment ID..." pattern="^[a-fA-F\d]{64}$"/>
     </div>
