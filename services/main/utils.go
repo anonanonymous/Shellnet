@@ -2,8 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 )
@@ -48,11 +53,12 @@ func alreadyLoggedIn(res http.ResponseWriter, req *http.Request) bool {
 
 // wrapper for redis HMSET
 func sessionSetKeys(key, uname, addr string) error {
-	_, err := sessionDB.Do(
+	conn := sessionDB.Get()
+	_, err := conn.Do(
 		"HMSET", key,
 		"username", uname,
 		"address", addr,
-		"EX", 1512000)
+		"EX", 1512000) // 420 hours
 	return err
 }
 
@@ -62,7 +68,8 @@ func sessionGetKeys(req *http.Request) *userInfo {
 	if err != nil {
 		return nil
 	}
-	reply, err := redis.Strings(sessionDB.Do("HMGET", cookie.Value, "username", "address"))
+	conn := sessionDB.Get()
+	reply, err := redis.Strings(conn.Do("HMGET", cookie.Value, "username", "address"))
 	if err != nil || len(reply) != 2 {
 		return nil
 	}
@@ -75,16 +82,15 @@ func sessionGetKeys(req *http.Request) *userInfo {
 
 // wrapper for redis DEL KEY - used for logout
 func sessionDelKey(key string) error {
-	_, err := sessionDB.Do("DEL", key)
-	if err != nil {
-		return err
-	}
-	return nil
+	conn := sessionDB.Get()
+	_, err := conn.Do("DEL", key)
+
+	return err
 }
 
 // tryAuth - try to signup/login with a given username and password
 func tryAuth(username, password, method string) *jsonResponse {
-	resb, err := http.PostForm(host+":8081/"+method,
+	resb, err := http.PostForm(usrURI+"/"+method,
 		url.Values{
 			"username": {username},
 			"password": {password},
@@ -99,7 +105,8 @@ func tryAuth(username, password, method string) *jsonResponse {
 // walletCmd - executes a wallet command and returns the result
 func walletCmd(cmd, address string) *jsonResponse {
 	response := jsonResponse{}
-	resb, err := http.Get(host + ":8082/" + cmd + "/" + address)
+	fmt.Println(walletURI + "/" + cmd + "/" + address)
+	resb, err := http.Get(walletURI + "/" + cmd + "/" + address)
 	if err != nil {
 		return &jsonResponse{Status: err.Error()}
 	}
@@ -118,4 +125,38 @@ func decodeResponse(resb *http.Response) (*jsonResponse, error) {
 		return nil, err
 	}
 	return &response, nil
+}
+
+// newPool - creates and initializes a redis pool
+func newPool(server string) *redis.Pool {
+	return &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", server)
+			if err != nil {
+				return nil, err
+			}
+			return c, err
+		},
+
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+	}
+}
+
+// cleanipHook - close redis pool on exit
+func cleanupHook() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGTERM)
+	signal.Notify(c, syscall.SIGKILL)
+	go func() {
+		<-c
+		sessionDB.Close()
+		os.Exit(0)
+	}()
 }

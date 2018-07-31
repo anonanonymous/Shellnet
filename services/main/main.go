@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"text/template"
 	"time"
 
@@ -18,23 +19,40 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// sponge
-const host = "http://192.168.1.70"
-const dbuser = "dsanon"
-const dbpwd = "86a8c07323ea5e56dc8e8ed70191a04cea0c2daa7030993d01d8ba3e64076bc2"
-
-var sessionDB redis.Conn
-var templates *template.Template
-var sanitizer *bluemonday.Policy
+var (
+	hostURI, hostPort string
+	usrURI            string
+	walletURI         string
+	sessionDB         *redis.Pool
+	templates         *template.Template
+	sanitizer         *bluemonday.Policy
+)
 
 func init() {
-	var err error
-	sessionDB, err = redis.Dial("tcp", ":6379")
-	if err != nil {
-		panic(err)
+	redisHost := os.Getenv("REDIS_HOST")
+	if redisHost == "" {
+		redisHost = ":6379"
 	}
+	if hostURI = os.Getenv("HOST_URI"); hostURI == "" {
+		panic("Set the HOST_URI env variable")
+	}
+	if hostPort = os.Getenv("HOST_PORT"); hostPort == "" {
+		hostPort = ":8080"
+		println("Using default HOST_PORT - 8080")
+	}
+	hostURI += hostPort
+
+	if usrURI = os.Getenv("USER_URI"); usrURI == "" {
+		panic("Set the USER_URI env variable")
+	}
+	if walletURI = os.Getenv("WALLET_URI"); walletURI == "" {
+		panic("Set the WALLET_URI env variable")
+	}
+
 	sanitizer = bluemonday.StrictPolicy()
 	templates = template.Must(template.ParseGlob("templates/*.html"))
+	sessionDB = newPool(redisHost)
+	cleanupHook()
 }
 
 func main() {
@@ -51,7 +69,7 @@ func main() {
 	router.GET("/wallet_info", getWalletInfo)
 	router.Handler(http.MethodGet, "/assets/*filepath", http.StripPrefix("/assets",
 		http.FileServer(http.Dir("./assets"))))
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(hostPort, router))
 }
 
 // index displays homepage - method: GET
@@ -76,7 +94,7 @@ func index(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 // accountPage - shows wallet info and stufffs
 func accountPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	if !alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
 	usr := sessionGetKeys(req)
@@ -89,11 +107,11 @@ func accountPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params
 		http.Error(res, walletResponse.Status, http.StatusInternalServerError)
 		return
 	}
-
 	// TODO - convert availableBalance to float
 	data := struct {
 		User   userInfo
 		Wallet map[string]interface{}
+		Page   pageInfo
 	}{User: *usr, Wallet: walletResponse.Data}
 	err := templates.ExecuteTemplate(res, "account.html", data)
 	if err != nil {
@@ -104,7 +122,7 @@ func accountPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params
 // signupPage - displays signup page - method: GET
 func signupPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	if alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
 	data := struct {
@@ -117,7 +135,7 @@ func signupPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params)
 // loginPage - displays login page - method: GET
 func loginPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	if alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
 	data := struct {
@@ -130,7 +148,7 @@ func loginPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params) 
 // loginHandler handles logins, redirects to account page on succeess - method: POST
 func loginHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	if alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, host+":8080/account", http.StatusSeeOther)
+		http.Redirect(res, req, hostURI+"/account", http.StatusSeeOther)
 		return
 	}
 	username := req.FormValue("username")
@@ -156,13 +174,13 @@ func loginHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Param
 	}
 
 	http.SetCookie(res, cookie)
-	http.Redirect(res, req, host+":8080/account", http.StatusSeeOther)
+	http.Redirect(res, req, hostURI, http.StatusSeeOther)
 }
 
 // deleteHandler - TODO - delete user from database
 func deleteHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	if !alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
 	cookie := &http.Cookie{
@@ -171,13 +189,13 @@ func deleteHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 		MaxAge: -1,
 	}
 	http.SetCookie(res, cookie)
-	http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+	http.Redirect(res, req, hostURI, http.StatusSeeOther)
 }
 
 // logoutHandler - removes the user cookie from redis
 func logoutHandler(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	if !alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
 	cookie, _ := req.Cookie("session")
@@ -190,19 +208,19 @@ func logoutHandler(res http.ResponseWriter, req *http.Request, p httprouter.Para
 	}
 
 	http.SetCookie(res, cookie)
-	http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+	http.Redirect(res, req, hostURI, http.StatusSeeOther)
 }
 
 // signupHandler tries to add a new user - method: POST
 func signupHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	if alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, host+":8080/account", http.StatusSeeOther)
+		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
 	username := req.FormValue("username")
 	password := req.FormValue("password")
 
-	if len(username) < 1 || len(password) < 1 {
+	if len(username) < 1 || len(password) < 1 || len(password) > 64 {
 		http.Error(res, "Incorrect Username/Password format", http.StatusBadRequest)
 		return
 	}
@@ -210,13 +228,13 @@ func signupHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 		http.Error(res, response.Status, http.StatusForbidden)
 		return
 	}
-	http.Redirect(res, req, host+":8080/login", http.StatusSeeOther)
+	http.Redirect(res, req, hostURI+"/login", http.StatusSeeOther)
 }
 
-//getWalletInfo - gets wallet info
+// getWalletInfo - gets wallet info
 func getWalletInfo(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	if !alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
 	usr := sessionGetKeys(req)
@@ -233,7 +251,7 @@ func getWalletInfo(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 // sendHandler - sends a transaction
 func sendHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	if !alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, host+":8080", http.StatusSeeOther)
+		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
 
@@ -243,7 +261,7 @@ func sendHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params
 		return
 	}
 
-	resb, err := http.PostForm(host+":8082/send_transaction/",
+	resb, err := http.PostForm(walletURI+"/send_transaction",
 		url.Values{
 			"amount":      {req.FormValue("amount")},
 			"address":     {usr.Address},
@@ -257,5 +275,5 @@ func sendHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params
 	response := jsonResponse{}
 	json.NewDecoder(resb.Body).Decode(&response)
 	fmt.Println(response.Data)
-	http.Redirect(res, req, host+":8080/account", http.StatusSeeOther)
+	http.Redirect(res, req, hostURI+"/account", http.StatusSeeOther)
 }

@@ -8,27 +8,28 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/microcosm-cc/bluemonday"
 
 	_ "github.com/lib/pq"
 
-	"github.com/gomodule/redigo/redis"
-
 	"github.com/julienschmidt/httprouter"
 	"github.com/opencoff/go-srp"
 )
 
-const host = "http://192.168.1.70"
-const port = ":8081"
-const dbuser = "dsanon"
-const dbpwd = "86a8c07323ea5e56dc8e8ed70191a04cea0c2daa7030993d01d8ba3e64076bc2"
+const dbUser = "dsanon"
+const dbPwd = "86a8c07323ea5e56dc8e8ed70191a04cea0c2daa7030993d01d8ba3e64076bc2"
 
-var sanitizer *bluemonday.Policy
-var sessionDB redis.Conn
-var nBits = 1024
-var srpEnv *srp.SRP
-var db *sql.DB
+var (
+	hostURI, hostPort string
+	walletURI         string
+	sanitizer         *bluemonday.Policy
+	srpEnv            *srp.SRP
+	db                *sql.DB
+)
+
+const nBits = 1024
 
 type user struct {
 	ID       int
@@ -40,18 +41,26 @@ type user struct {
 
 func init() {
 	var err error
+
+	if hostURI = os.Getenv("HOST_URI"); hostURI == "" {
+		hostURI = "http://localhost"
+		println("Using default HOST_URI - http://localhost")
+	}
+	if hostPort = os.Getenv("HOST_PORT"); hostPort == "" {
+		hostPort = ":8081"
+		println("Using default HOST_PORT - 8081")
+	}
+	hostURI += hostPort
+	if walletURI = os.Getenv("WALLET_URI"); walletURI == "" {
+		panic("Set the WALLET_URI env variable")
+	}
 	srpEnv, err = srp.New(nBits)
 	if err != nil {
 		panic(err)
 	}
 	sanitizer = bluemonday.StrictPolicy()
 
-	sessionDB, err = redis.Dial("tcp", ":6379")
-	if err != nil {
-		panic(err)
-	}
-
-	db, err = sql.Open("postgres", "postgres://"+dbuser+":"+dbpwd+"@localhost/users?sslmode=disable")
+	db, err = sql.Open("postgres", "postgres://"+dbUser+":"+dbPwd+"@localhost/users?sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +75,7 @@ func main() {
 	router.POST("/signup", signup)
 	router.POST("/login", login)
 	router.DELETE("/user/:username", deleteUser)
-	log.Fatal(http.ListenAndServe(port, router))
+	log.Fatal(http.ListenAndServe(hostPort, router))
 }
 
 // signup - adds user to db
@@ -88,14 +97,14 @@ func signup(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	ih, verif := v.Encode()
 	// sponge
 	fmt.Printf("v: %s, ih: %s\n", verif, ih)
-	resb, err := http.Get(host + ":8082/address")
+	resb, err := http.Get(walletURI + "/address")
 	if err != nil {
 		encoder.Encode(jsonResponse{Status: err.Error()})
 		return
 	}
 	response, err := decodeResponse(resb)
 	address := response["Data"].(map[string]interface{})["address"].(string)
-	_, err = db.Exec("INSERT INTO accounts (ih, verifier, username, address) VALUES ($1, $2, $3, 4);", ih, verif, username, address)
+	_, err = db.Exec("INSERT INTO accounts (ih, verifier, username, address) VALUES ($1, $2, $3, $4);", ih, verif, username, address)
 	if err != nil {
 		encoder.Encode(jsonResponse{Status: err.Error()})
 	} else {
@@ -103,10 +112,9 @@ func signup(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	}
 }
 
-// login - verify username/password and sends back a cookie
+// login - verify username/password and sends back a sessionID
 func login(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	encoder := json.NewEncoder(res)
-	//todo verify that input is utf-8
 	username := req.FormValue("username")
 	password := req.FormValue("password")
 	usr, err := getUser(username)

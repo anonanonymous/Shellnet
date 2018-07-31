@@ -33,7 +33,7 @@ func InternalServerError(res http.ResponseWriter, req *http.Request, err error) 
 
 // isRegistered - check if username is already present in the database
 func isRegistered(username string) bool {
-	row := db.QueryRow("SELECT * FROM accounts WHERE username = $1;", username)
+	row := db.QueryRow("SELECT username FROM accounts WHERE username = $1;", username)
 	err := row.Scan()
 	return err != sql.ErrNoRows
 }

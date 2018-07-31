@@ -15,19 +15,34 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-const port = 8070
-
-var rpcPwd string
-var walletDB *redis.Pool
+var (
+	hostURI, hostPort string
+	rpcPort           int
+	rpcPwd            string
+	walletDB          *redis.Pool
+)
 
 func init() {
+	var err error
 	redisHost := os.Getenv("REDIS_HOST")
 	if redisHost == "" {
 		redisHost = ":6379"
 	}
-	rpcPwd = os.Getenv("RPC_PWD")
-	if rpcPwd == "" {
+	if hostURI = os.Getenv("HOST_URI"); hostURI == "" {
+		hostURI = "http://localhost"
+		println("Using default HOST_URI - http://localhost")
+	}
+	if hostPort = os.Getenv("HOST_PORT"); hostPort == "" {
+		hostPort = ":8082"
+		println("Using default HOST_PORT - 8082")
+	}
+	hostURI += hostPort
+	if rpcPwd = os.Getenv("RPC_PWD"); rpcPwd == "" {
 		panic("Set the RPC_PWD env variable")
+	}
+	if rpcPort, err = strconv.Atoi(os.Getenv("RPC_PORT")); rpcPort == 0 || err != nil {
+		rpcPort = 8070
+		println("Using default RPC_PORT - 8070")
 	}
 	walletDB = newPool(redisHost)
 	cleanupHook()
@@ -38,7 +53,7 @@ func main() {
 	router.GET("/status/:address", getStatus)
 	router.GET("/address", getAddress)
 	router.POST("/send_transaction", sendTransaction)
-	log.Fatal(http.ListenAndServe(":8082", router))
+	log.Fatal(http.ListenAndServe(hostPort, router))
 }
 
 // createWallets - creates a new wallet
@@ -47,14 +62,14 @@ func createWallet() (string, error) {
 	walletdResponse := walletd.CreateAddress(
 		rpcPwd,
 		"localhost",
-		port,
+		rpcPort,
 	)
 	json.NewDecoder(walletdResponse).Decode(&response)
 	address := response["result"].(map[string]interface{})["address"].(string)
 	return address, nil
 }
 
-// getAddress - gets an address for a new user
+// getAddress - getss an address for a new user
 func getAddress(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	encoder := json.NewEncoder(res)
 	address, err := createWallet()
@@ -74,15 +89,20 @@ func getStatus(res http.ResponseWriter, req *http.Request, p httprouter.Params) 
 	walletdResponse := walletd.GetBalance(
 		rpcPwd,
 		"localhost",
-		port,
+		rpcPort,
 		address,
 	)
 	json.NewDecoder(walletdResponse).Decode(&temp)
+	trtl := temp["result"].(map[string]interface{})["availableBalance"].(float64) / 100
+	temp["result"].(map[string]interface{})["availableBalance"] = trtl
+	trtl = temp["result"].(map[string]interface{})["lockedAmount"].(float64) / 100
+	temp["result"].(map[string]interface{})["lockedAmount"] = trtl
+
 	response.Data["balance"] = temp["result"]
 	walletdResponse = walletd.GetStatus(
 		rpcPwd,
 		"localhost",
-		port,
+		rpcPort,
 	)
 	json.NewDecoder(walletdResponse).Decode(&temp)
 	response.Data["status"] = temp["result"]
@@ -95,6 +115,7 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 	amountStr := req.FormValue("amount")
 	paymentID := req.FormValue("payment_id")
 	address := req.FormValue("address")
+	extra := ""
 	response := jsonResponse{}
 	if matched, _ := regexp.MatchString("^(TRTL)[a-zA-Z0-9]{95}$", dest); !matched {
 		json.NewEncoder(res).Encode(jsonResponse{Status: "Incorrect Address Format"})
@@ -109,10 +130,11 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 		return
 	}
 	amount, _ := strconv.ParseFloat(amountStr, 10)
+	amount *= 100
 	walletdResponse := walletd.SendTransaction(
 		rpcPwd,
 		"localhost",
-		port,
+		rpcPort,
 		[]string{address},
 		[]map[string]interface{}{
 			{
@@ -121,14 +143,13 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 			},
 		},
 		10,
-		0,  // unlock time
-		7,  // mixin
-		"", // extra
+		0, // unlock time
+		7, // mixin
+		extra,
 		paymentID,
 		"", // change address
 	)
-	fmt.Println(amount, address, port, dest, paymentID)
-	fmt.Printf("%v\n", walletdResponse)
+	fmt.Println(amount, address, rpcPort, dest, paymentID)
 	response.Status = "OK"
 	json.NewDecoder(walletdResponse).Decode(&response.Data)
 	json.NewEncoder(res).Encode(response)

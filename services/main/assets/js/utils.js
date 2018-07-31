@@ -17,11 +17,11 @@ function setWalletStatus() {
   } else {
     document.getElementById("wallet_status").className = "orange-input";
   }
-  document.getElementById("wallet_balance").textContent = availableBalance /*/ 100*/;
+  document.getElementById("wallet_balance").textContent = availableBalance;
   document.getElementById("block_count").textContent = blockCount;
   console.log("checking wallet...");
 }
 
 if (window.location.pathname == "/account") {
-  window.setInterval(setWalletStatus, 30000);
+  window.setInterval(setWalletStatus, 5000);
 }
