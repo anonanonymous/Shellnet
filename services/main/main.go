@@ -107,12 +107,16 @@ func accountPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params
 		http.Error(res, walletResponse.Status, http.StatusInternalServerError)
 		return
 	}
-	// TODO - convert availableBalance to float
+	walletIcon := walletStatusColor(walletResponse)
+	pg := pageInfo{
+		URI:      hostURI,
+		Messages: map[string]interface{}{"wallet_icon": walletIcon},
+	}
 	data := struct {
-		User   userInfo
-		Wallet map[string]interface{}
-		Page   pageInfo
-	}{User: *usr, Wallet: walletResponse.Data}
+		User     userInfo
+		Wallet   map[string]interface{}
+		PageAttr pageInfo
+	}{User: *usr, Wallet: walletResponse.Data, PageAttr: pg}
 	err := templates.ExecuteTemplate(res, "account.html", data)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -125,9 +129,13 @@ func signupPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params)
 		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
+	pg := pageInfo{
+		URI:     hostURI,
+		Element: "signup",
+	}
 	data := struct {
 		PageAttr pageInfo
-	}{pageInfo{Element: "signup"}}
+	}{PageAttr: pg}
 	err := templates.ExecuteTemplate(res, "login.html", data)
 	InternalServerError(res, req, err)
 }
@@ -138,9 +146,13 @@ func loginPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params) 
 		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
+	pg := pageInfo{
+		URI:     hostURI,
+		Element: "login",
+	}
 	data := struct {
 		PageAttr pageInfo
-	}{pageInfo{Element: "login"}}
+	}{PageAttr: pg}
 	err := templates.ExecuteTemplate(res, "login.html", data)
 	InternalServerError(res, req, err)
 }
@@ -156,7 +168,7 @@ func loginHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Param
 
 	response := tryAuth(username, password, "login")
 	if response.Status != "OK" {
-		http.Error(res, response.Status, http.StatusForbidden)
+		InternalServerError(res, req, authErrorPage(res, response.Status, "login"))
 		return
 	}
 	cookie := &http.Cookie{
@@ -217,15 +229,21 @@ func signupHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
+	var message string
 	username := req.FormValue("username")
 	password := req.FormValue("password")
+	verifyPassword := req.FormValue("verify_password")
 
-	if len(username) < 1 || len(password) < 1 || len(password) > 64 {
-		http.Error(res, "Incorrect Username/Password format", http.StatusBadRequest)
-		return
+	if len(username) < 1 || len(password) < 1 || len(username) > 64 {
+		message = "Incorrect Username/Password format"
+	} else if password != verifyPassword {
+		message = "Passwords do not match"
+	} else if response := tryAuth(username, password, "signup"); response.Status != "OK" {
+		message = response.Status
 	}
-	if response := tryAuth(username, password, "signup"); response.Status != "OK" {
-		http.Error(res, response.Status, http.StatusForbidden)
+
+	if message != "" {
+		InternalServerError(res, req, authErrorPage(res, message, "signup"))
 		return
 	}
 	http.Redirect(res, req, hostURI+"/login", http.StatusSeeOther)
@@ -275,5 +293,6 @@ func sendHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params
 	response := jsonResponse{}
 	json.NewDecoder(resb.Body).Decode(&response)
 	fmt.Println(response.Data)
-	http.Redirect(res, req, hostURI+"/account", http.StatusSeeOther)
+	fmt.Fprintln(res, response.Data)
+	// http.Redirect(res, req, hostURI+"/account", http.StatusSeeOther)
 }

@@ -1,7 +1,3 @@
-html {
-  height: 100vh;
-}
-
 html,
 body {
   margin: 0;
@@ -9,6 +5,7 @@ body {
 }
 
 body {
+  height: 100%;
   align-items: center;
   background-image: linear-gradient(135deg, tomato, rebeccapurple);
   display: flex;
@@ -59,7 +56,7 @@ body {
   border: 1px solid #F2F2F2;
   box-sizing: border-box;
   padding: .5rem 1rem;
-  overflow:auto;
+  word-wrap: break-word;
 }
 
   table,
@@ -109,3 +106,63 @@ body {
     float: right;
     width: 50%;
   }
+
+  #wallet_status {
+    float: right;
+  }
+
+
+  /* alert messages */
+  .alert .inner {
+    padding: 20px;
+    background-color: #f44336;
+    color: white;
+}
+
+.alert .close {
+  float: right;
+  margin: 20px 10px;
+  cursor: pointer;
+}
+
+.alert .inner,.alert .close {
+  color: rgb(88,88,88);
+}
+
+.alert input {
+  display: none;
+}
+
+.alert input:checked ~ * {
+  animation-name: hide;
+  animation-fill-mode: forwards;
+}
+
+.alert.error .inner {
+  border: 1px solid rgb(238,211,215);
+  background-color: rgb(242,222,222);
+}
+
+.alert.error .inner,.alert.error .close {
+  color: rgb(185,74,72);
+}
+
+.alert.success .inner {
+  border: 1px solid rgb(214,233,198);
+  background-color: rgb(223,240,216);
+}
+
+.alert.success .inner,.alert.success .close {
+  color: rgb(70,136,71);
+}
+
+@keyframes hide {
+  100% {
+    height: 0px;
+    width: 0px;
+    overflow: hidden;
+    margin: 0px;
+    padding: 0px;
+    border: 0px;
+  }
+}

@@ -1,4 +1,3 @@
-{{ $host := "http://192.168.1.70:8080" }}
 <!doctype html>
 <html lang="en">
     <head>
@@ -7,10 +6,22 @@
         <link rel="icon" href="assets/images/fav_icon.ico" type="image/x-icon">
         <link rel="stylesheet prefetch" href="https://unpkg.com/unnamed"/>
         <link rel="stylesheet prefetch" href="/assets/css/tabs.css"/>
+        <link rel="stylesheet prefetch" href="/assets/css/widgets.css"/>
         <title>Shellnet</title>
     </head>
     <body>
+        <h1 class="title gradient-orange center-text"><code>SHELLNET</code></h1>
         <div class="tab_container container">
+                {{ if index .PageAttr.Messages "error"}}
+                <div class="alert error">
+                    <input type="checkbox" id="alert1"/>
+                    <label class="close" title="close" for="alert1">&times
+                    </label>
+                    <p class="inner">
+                    <strong>Error!</strong> {{ index .PageAttr.Messages "error" }}
+                    </p>
+                </div>
+                {{ end }}
             <input id="tab1" type="radio" name="tabs" {{ if eq .PageAttr.Element "login" }}checked{{ end }}>
             <label for="tab1"><span>Login</span></label>
             
@@ -20,7 +31,7 @@
             <section id="content1" class="tab-content">
                 <div class="container">
                 <h1 class="center-text">Log Into Your Account</h1>
-                <form action={{ printf "%s%s" $host "/login" }} method="POST">
+                <form action={{ printf "%s%s" .PageAttr.URI "/login" }} method="POST">
                     <div class="input-field green-input">
                     <span class="user-icon"></span>
                     <input type="text" name="username" placeholder="username" autofocus="" required/>
@@ -38,7 +49,7 @@
             <section id="content2" class="tab-content">
                 <div class="container">
                     <h1 class="center-text">Create a New Account</h1>
-                        <form action={{ printf "%s%s" $host "/signup" }} method="POST">
+                        <form action={{ printf "%s%s" .PageAttr.URI "/signup" }} method="POST">
                             <div class="input-field green-input">
                                 <span class="user-icon"></span>
                                 <input type="text" name="username" placeholder="username" autofocus="" required/>
@@ -47,6 +58,10 @@
                             <div class="input-field green-input">
                                 <span class="caret-icon"></span>
                                 <input type="password" name="password" placeholder="password" required/>
+                            </div>
+                            <div class="input-field green-input">
+                                <span class="caret-icon"></span>
+                                <input type="password" name="verify_password" placeholder="verify password" required/>
                             </div>
                             <button class="btn btn-primary gradient-green">Signup</button>
                         </form>

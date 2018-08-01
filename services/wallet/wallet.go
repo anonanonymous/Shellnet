@@ -69,7 +69,7 @@ func createWallet() (string, error) {
 	return address, nil
 }
 
-// getAddress - getss an address for a new user
+// getAddress - gets an address for a new user
 func getAddress(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	encoder := json.NewEncoder(res)
 	address, err := createWallet()

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -24,7 +23,9 @@ type userInfo struct {
 }
 
 type pageInfo struct {
-	Element string
+	URI      string
+	Element  string
+	Messages map[string]interface{}
 }
 
 // InternalServerError - handle internal server errors
@@ -34,6 +35,20 @@ func InternalServerError(res http.ResponseWriter, req *http.Request, err error) 
 		return true
 	}
 	return false
+}
+
+// errorPage - displays the specified page with an error message
+func authErrorPage(res http.ResponseWriter, message, page string) error {
+	pg := pageInfo{
+		URI:      hostURI,
+		Element:  page,
+		Messages: map[string]interface{}{"error": message},
+	}
+	data := struct {
+		PageAttr pageInfo
+	}{PageAttr: pg}
+	res.WriteHeader(http.StatusUnauthorized)
+	return templates.ExecuteTemplate(res, "login.html", data)
 }
 
 // alreadyLoggedIn - checks if the user is already logged in
@@ -105,7 +120,6 @@ func tryAuth(username, password, method string) *jsonResponse {
 // walletCmd - executes a wallet command and returns the result
 func walletCmd(cmd, address string) *jsonResponse {
 	response := jsonResponse{}
-	fmt.Println(walletURI + "/" + cmd + "/" + address)
 	resb, err := http.Get(walletURI + "/" + cmd + "/" + address)
 	if err != nil {
 		return &jsonResponse{Status: err.Error()}
@@ -115,6 +129,16 @@ func walletCmd(cmd, address string) *jsonResponse {
 	}
 	response.Status = "OK"
 	return &response
+}
+
+// walletStatusColor - green if synced, else orange
+func walletStatusColor(res *jsonResponse) string {
+	a := res.Data["status"].(map[string]interface{})["knownBlockCount"].(float64)
+	b := res.Data["status"].(map[string]interface{})["blockCount"].(float64)
+	if a-b < 5 && b > 0 {
+		return "green-input"
+	}
+	return "orange-input"
 }
 
 // decodeResponse - decodes the json data from a Response

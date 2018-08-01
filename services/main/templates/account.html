@@ -1,34 +1,38 @@
-{{ $host := "http://192.168.1.70:8080" }}
 {{ template "header" }}
 <h1 class="title gradient-orange center-text"><code>SHELLNET</code></h1>
 <div class="table-container">
-  <div id="wallet_status">
+  <div id="wallet_status"  class="{{ index .PageAttr.Messages "wallet_icon"}}">
     <span class="caret-icon"></span>&nbsp;status<span>
   </div>
-  <strong>Block:&nbsp;</strong><span id="block_count">{{ index .Wallet "status" "blockCount"}}</span>
+  <strong>Block:&nbsp;</strong><span id="block_count">{{ index .Wallet "status" "blockCount"}}/{{ index .Wallet "status" "knownBlockCount" }}</span>
   <h1>Wallet Info</h1>
   <table>
     <tbody>
       <tr>
         <td data-column-label="Name"><span>{{ .User.Username }}</span></td>
-        <td data-column-label="Balance"><span id="wallet_balance">{{ index .Wallet "balance" "availableBalance" }}</span></td>
+        <td data-column-label="Available"><span id="available_balance">{{ index .Wallet "balance" "availableBalance" }} TRTL</span></td>
+        <td data-column-label="Locked"><span id="locked_amount">{{ index .Wallet "balance" "lockedAmount" }} TRTL</span></td>
         <td data-column-label="Address"><span>{{ .User.Address }}</span></td>
       </tr>
     </tbody>
   </table>
 </div>
 <div class="container">
-  <form action={{ printf "%s%s" $host "/send_transaction"}} method="POST">
-    <div class="input-field green-input">
-      <h2>Send Transaction</h2>
-      <span class="caret-icon"></span>
-      <input type="text" name="destination" placeholder="Enter destination address..." pattern="^(TRTL)[a-zA-Z0-9]{95}$" required/>
-      <span class="caret-icon"></span>
-      <input type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.{0,1}\d{0,2}$" required/>
-      <span class="caret-icon"></span>
-      <input type="text" name="payment_id" placeholder="Enter Payment ID..." pattern="^[a-fA-F\d]{64}$"/>
+  <div class="row">
+    <div class="column xlarge-6 small-12">
+      <form action={{ printf "%s%s" .PageAttr.URI "/send_transaction"}} method="POST">
+        <div class="input-field green-input">
+          <h2>Send Transaction</h2>
+          <span class="caret-icon"></span>
+          <input type="text" name="destination" placeholder="Enter destination address..." pattern="^(TRTL)[a-zA-Z0-9]{95}$" required/>
+          <span class="caret-icon"></span>
+          <input type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.{0,1}\d{0,2}$" required/>
+          <span class="caret-icon"></span>
+          <input type="text" name="payment_id" placeholder="Enter Payment ID..." pattern="^[a-fA-F\d]{64}$"/>
+        </div>
+        <button class="btn btn-primary gradient-green">Send</button>
+      </form>
     </div>
-    <button class="btn btn-primary gradient-green">Send</button>
-  </form>
+  </div>
 </div>
 {{ template "footer" }}
