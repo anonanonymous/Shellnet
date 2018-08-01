@@ -1,0 +1,112 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  height: 100%;
+  align-items: center;
+  background-image: linear-gradient(135deg, tomato, rebeccapurple);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.title {
+  font-family: monospace;
+  width: 100%;  
+}
+
+.table-container, .container {
+  margin: 10px 0;
+  background-color: #FFF;
+  border-radius: 3px;
+  box-shadow: 0 3px 12px 1px rgba(0, 0, 0, 0.3);
+  color: #333;
+  padding: 1rem 1.5rem;
+  width: 90%;
+}
+@media only screen and (min-width: 801px) {
+  .table-container, .container {
+    width: 60%;
+  }
+}
+
+.table-container h1 {
+  font-weight: 100;
+}
+
+.table-container table {
+  border: 1px solid #333;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.table-container thead {
+  border-bottom: 1px solid #CCC;
+}
+
+.table-container thead tr {
+  background-color: #F2F2F2;
+}
+
+.table-container th,
+.table-container td {
+  border: 1px solid #F2F2F2;
+  box-sizing: border-box;
+  padding: .5rem 1rem;
+  word-wrap: break-word;
+}
+
+  table,
+  thead,
+  tbody,
+  tr,
+  th,
+  td {
+    display: block;
+  }
+
+  thead tr {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+  }
+
+  tr + tr {
+    margin-top: 2rem;
+  }
+  tr::after {
+    clear: both;
+    content: '';
+    display: table;
+  }
+
+  td {
+    border: none;
+    border-bottom: 1px solid #DDD;
+    float: right;
+    width: 100%;
+  }
+  td::before {
+    content: attr(data-column-label);
+    display: inline-block;
+    font-weight: 600;
+    padding-right: 10px;
+    width: calc(50% - 10px);
+  }
+  td span {
+    display: block;
+    float: right;
+    width: 50%;
+  }
+
+  #wallet_status {
+    float: right;
+  }

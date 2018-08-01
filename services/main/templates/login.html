@@ -22,6 +22,16 @@
                     </p>
                 </div>
                 {{ end }}
+                {{ if index .PageAttr.Messages "success"}}
+                <div class="alert success">
+                    <input type="checkbox" id="alert1"/>
+                    <label class="close" title="close" for="alert1">&times
+                    </label>
+                    <p class="inner">
+                    <strong>Success!</strong> {{ index .PageAttr.Messages "success" }}
+                    </p>
+                </div>
+                {{ end }}
             <input id="tab1" type="radio" name="tabs" {{ if eq .PageAttr.Element "login" }}checked{{ end }}>
             <label for="tab1"><span>Login</span></label>
             
@@ -34,7 +44,7 @@
                 <form action={{ printf "%s%s" .PageAttr.URI "/login" }} method="POST">
                     <div class="input-field green-input">
                     <span class="user-icon"></span>
-                    <input type="text" name="username" placeholder="username" autofocus="" required/>
+                    <input type="text" name="username" placeholder="username" autofocus="" pattern="^.{1,64}$" required/>
                     </div>
             
                     <div class="input-field green-input">
@@ -52,7 +62,7 @@
                         <form action={{ printf "%s%s" .PageAttr.URI "/signup" }} method="POST">
                             <div class="input-field green-input">
                                 <span class="user-icon"></span>
-                                <input type="text" name="username" placeholder="username" autofocus="" required/>
+                                <input type="text" name="username" placeholder="username" autofocus="" pattern="^.{1,64}$" required/>
                             </div>
                         
                             <div class="input-field green-input">

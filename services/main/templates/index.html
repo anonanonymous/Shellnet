@@ -1,9 +1,19 @@
-{{ template "header" }}
-<h1 class="title gradient-orange center-text"><code>SHELLNET</code></h1>
-  <h1>Welcome to Shellnet{{ if .User }}, {{ .User.Username }}{{ end }}</h1>
-  {{ if .User }}
-  <h5>go to <a href="/account">account</a> or <a href="/logout">logout</a></h5>
-  {{ else }}
-  <h5>please <a href="/login">login</a> or <a href="/signup">create an account</a></h5>
-  {{ end }}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet prefetch" href="https://unpkg.com/unnamed"/>
+        <link rel="stylesheet prefetch" href="/assets/css/main.css"/>
+        <link rel="icon" href="assets/images/fav_icon.ico" type="image/x-icon">
+        <title>Shellnet</title>
+    </head>
+    <body>
+      <h1 class="title gradient-orange center-text"><code>SHELLNET</code></h1>
+        <h1>Welcome{{ if .User }}, {{ .User.Username }}{{ end }}</h1>
+        {{ if .User }}
+        <h5>go to <a href="/account">account</a> or <a href="/logout">logout</a></h5>
+        {{ else }}
+        <h5>please <a href="/login">login</a> or <a href="/signup">create an account</a></h5>
+        {{ end }}
 {{ template "footer" }}

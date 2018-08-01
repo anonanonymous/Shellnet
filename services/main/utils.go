@@ -37,17 +37,21 @@ func InternalServerError(res http.ResponseWriter, req *http.Request, err error) 
 	return false
 }
 
-// errorPage - displays the specified page with an error message
-func authErrorPage(res http.ResponseWriter, message, page string) error {
+// authMessage - displays the specified page with a message
+func authMessage(res http.ResponseWriter, message, page, spec string) error {
 	pg := pageInfo{
 		URI:      hostURI,
 		Element:  page,
-		Messages: map[string]interface{}{"error": message},
+		Messages: map[string]interface{}{spec: message},
 	}
 	data := struct {
 		PageAttr pageInfo
 	}{PageAttr: pg}
-	res.WriteHeader(http.StatusUnauthorized)
+	if spec == "error" {
+		res.WriteHeader(http.StatusUnauthorized)
+	} else {
+		res.WriteHeader(http.StatusFound)
+	}
 	return templates.ExecuteTemplate(res, "login.html", data)
 }
 
@@ -95,7 +99,7 @@ func sessionGetKeys(req *http.Request) *userInfo {
 	return data
 }
 
-// wrapper for redis DEL KEY - used for logout
+// sessionDelKey - wrapper for redis DEL KEY - used for logout
 func sessionDelKey(key string) error {
 	conn := sessionDB.Get()
 	_, err := conn.Do("DEL", key)

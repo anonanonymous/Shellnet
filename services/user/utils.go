@@ -40,7 +40,7 @@ func isRegistered(username string) bool {
 
 // getUser - retrieves a user from the database
 func getUser(username string) (*user, error) {
-	row := db.QueryRow("SELECT * FROM accounts WHERE username = $1;", username)
+	row := db.QueryRow("SELECT ih, verifier, username, id, address FROM accounts WHERE username = $1;", username)
 	usr := user{}
 	err := row.Scan(&usr.IH, &usr.Verifier, &usr.Username, &usr.ID, &usr.Address)
 	if err != nil {

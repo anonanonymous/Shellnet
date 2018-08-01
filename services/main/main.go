@@ -168,7 +168,7 @@ func loginHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Param
 
 	response := tryAuth(username, password, "login")
 	if response.Status != "OK" {
-		InternalServerError(res, req, authErrorPage(res, response.Status, "login"))
+		InternalServerError(res, req, authMessage(res, response.Status, "login", "error"))
 		return
 	}
 	cookie := &http.Cookie{
@@ -243,10 +243,11 @@ func signupHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 	}
 
 	if message != "" {
-		InternalServerError(res, req, authErrorPage(res, message, "signup"))
-		return
+		InternalServerError(res, req, authMessage(res, message, "signup", "error"))
+	} else {
+		message = "Account Created, Please Log In"
+		InternalServerError(res, req, authMessage(res, message, "login", "success"))
 	}
-	http.Redirect(res, req, hostURI+"/login", http.StatusSeeOther)
 }
 
 // getWalletInfo - gets wallet info
@@ -294,5 +295,6 @@ func sendHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params
 	json.NewDecoder(resb.Body).Decode(&response)
 	fmt.Println(response.Data)
 	fmt.Fprintln(res, response.Data)
-	// http.Redirect(res, req, hostURI+"/account", http.StatusSeeOther)
+	// TODO - display transaction result
+	http.Redirect(res, req, hostURI+"/account", http.StatusSeeOther)
 }
