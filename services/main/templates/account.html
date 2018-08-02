@@ -1,6 +1,9 @@
 {{ template "header" }}
 <h1 class="title gradient-orange center-text"><code>SHELLNET</code></h1>
 <div class="table-container">
+  <a href="/logout">logout</a>&nbsp;
+  <a href="#">export keys</a>
+  <hr>
   <div id="wallet_status"  class="{{ index .PageAttr.Messages "wallet_icon"}}">
     <span class="caret-icon"></span>&nbsp;status<span>
   </div>
@@ -11,8 +14,13 @@
       <tr>
         <td data-column-label="Name"><span>{{ .User.Username }}</span></td>
         <td data-column-label="Available"><span id="available_balance">{{ index .Wallet "balance" "availableBalance" }} TRTL</span></td>
-        <td data-column-label="Locked"><span id="locked_amount">{{ index .Wallet "balance" "lockedAmount" }} TRTL</span></td>
-        <td data-column-label="Address"><span>{{ .User.Address }}</span></td>
+        <td data-column-label="Locked/Unconfirmed"><span id="locked_amount">{{ index .Wallet "balance" "lockedAmount" }} TRTL</span></td>
+        <td data-column-label="Address"><span><trtl id="address">{{ .User.Address }}</trtl>
+            <button onclick="copy_addr()">
+                &#128203;
+            </button>
+         </span>
+        </td>
       </tr>
     </tbody>
   </table>
@@ -32,7 +40,18 @@
         </div>
         <button class="btn btn-primary gradient-green">Send</button>
       </form>
+      {{ if index .PageAttr.Messages "txHash" }}
+      <div class="alert success">
+          <input type="checkbox" id="alert1"/>
+          <label class="close" title="close" for="alert1">&times
+          </label>
+          <p class="inner">
+          <strong>Transaction Hash</strong> {{ index .PageAttr.Messages "txHash" }}
+          </p>
+      </div>
+      {{ end }}
     </div>
   </div>
 </div>
+<input style="bottom: 100%; position: absolute;" id="addr_input"></input>
 {{ template "footer" }}

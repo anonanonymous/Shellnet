@@ -4,7 +4,7 @@
 Install the required packages. 
 
 `sudo apt install golang-1.9 git postgresql postgresql-contrib redis-server`
-If the `go` command isn't available after installing golang, add the following to the end of your `~/.profile`
+If the `go` command isn't available after installing golang, add the following to the end of your `~/.profile` and then `source . ~/.profile`
 ```
 export GOPATH=$HOME/go
 export GOROOT=/usr/lib/go-1.9
@@ -19,6 +19,7 @@ go get github.com/gomodule/redigo/redis \
 	github.com/opencoff/go-srp
 ```
 
+#### Postgres Setup
 Start the postgresql service
 `sudo service postgresql start`
 
@@ -26,12 +27,10 @@ Temporarily switch to the postgres user and change the password of the `postgres
 ```
 sudo su - postgres
 postgres@hostname:~/ psql
-postgres=# \password postgres
+postgres=# \password <your password>
 ```
 To be continued...
 ## Todo
-* auto-login after signup
-* show value measured in TRTL
 * Finish walletd integration
 * Make Front-end pretty
 * add documentation
@@ -44,4 +43,3 @@ To be continued...
 * Postgresql
 * Go
 * TurtleCoin wallet daemon
-

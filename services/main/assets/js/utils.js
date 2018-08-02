@@ -24,12 +24,13 @@ function setWalletStatus() {
   console.log("checking wallet...");
 }
 
-function copyAddress() {
-  let copyText = document.getElementById("myInput");
-  copyText.select();
-  document.execCommand("copy");
-}
+window.setInterval(setWalletStatus, 5000);
 
-if (window.location.pathname == "/account") {
-  window.setInterval(setWalletStatus, 5000);
+function copy_addr() {
+  let copyText = document.getElementById("address");
+  let input = document.getElementById("addr_input");
+  input.value = copyText.textContent;
+  input.select();
+  document.execCommand("copy");
+  alert("Copied: " + input.value);
 }

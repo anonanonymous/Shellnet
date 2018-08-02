@@ -25,6 +25,7 @@
 
 .alert.error .inner {
   border: 1px solid rgb(238,211,215);
+  word-wrap: break-word;
   background-color: rgb(242,222,222);
 }
 
@@ -34,6 +35,7 @@
 
 .alert.success .inner {
   border: 1px solid rgb(214,233,198);
+  word-wrap: break-word;
   background-color: rgb(223,240,216);
 }
 

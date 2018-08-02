@@ -150,7 +150,11 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 		"", // change address
 	)
 	fmt.Println(amount, address, rpcPort, dest, paymentID)
-	response.Status = "OK"
 	json.NewDecoder(walletdResponse).Decode(&response.Data)
+	if message, ok := response.Data["error"]; ok {
+		response.Status = message.(map[string]interface{})["message"].(string)
+	} else {
+		response.Status = "OK"
+	}
 	json.NewEncoder(res).Encode(response)
 }

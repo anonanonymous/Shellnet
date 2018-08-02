@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -102,25 +101,29 @@ func accountPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params
 		http.Error(res, "Couldn't find user session", http.StatusInternalServerError)
 		return
 	}
+
 	walletResponse := walletCmd("status", usr.Address)
 	if walletResponse.Status != "OK" {
 		http.Error(res, walletResponse.Status, http.StatusInternalServerError)
 		return
 	}
 	walletIcon := walletStatusColor(walletResponse)
+
 	pg := pageInfo{
 		URI:      hostURI,
 		Messages: map[string]interface{}{"wallet_icon": walletIcon},
 	}
+	if txHash, err := req.Cookie("transactionHash"); err == nil {
+		pg.Messages["txHash"] = txHash.Value
+		http.SetCookie(res, &http.Cookie{Name: "transactionHash", Path: "/account", MaxAge: -1})
+	}
+
 	data := struct {
 		User     userInfo
 		Wallet   map[string]interface{}
 		PageAttr pageInfo
 	}{User: *usr, Wallet: walletResponse.Data, PageAttr: pg}
-	err := templates.ExecuteTemplate(res, "account.html", data)
-	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-	}
+	InternalServerError(res, req, templates.ExecuteTemplate(res, "account.html", data))
 }
 
 // signupPage - displays signup page - method: GET
@@ -186,7 +189,7 @@ func loginHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Param
 	}
 
 	http.SetCookie(res, cookie)
-	http.Redirect(res, req, hostURI, http.StatusSeeOther)
+	http.Redirect(res, req, hostURI+"/account", http.StatusSeeOther)
 }
 
 // deleteHandler - TODO - delete user from database
@@ -204,7 +207,7 @@ func deleteHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 	http.Redirect(res, req, hostURI, http.StatusSeeOther)
 }
 
-// logoutHandler - removes the user cookie from redis
+// logoutHandler - removes the user cookie from redis - method: GET
 func logoutHandler(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	if !alreadyLoggedIn(res, req) {
 		http.Redirect(res, req, hostURI, http.StatusSeeOther)
@@ -268,12 +271,12 @@ func getWalletInfo(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 }
 
 // sendHandler - sends a transaction
-func sendHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func sendHandler(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	if !alreadyLoggedIn(res, req) {
 		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
-
+	var message string
 	usr := sessionGetKeys(req)
 	if usr == nil {
 		http.Error(res, "Couldn't find user session", http.StatusInternalServerError)
@@ -293,8 +296,21 @@ func sendHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params
 	}
 	response := jsonResponse{}
 	json.NewDecoder(resb.Body).Decode(&response)
-	fmt.Println(response.Data)
-	fmt.Fprintln(res, response.Data)
-	// TODO - display transaction result
+	// TODO - return json if user allows scripts in their browser
+	if p.ByName("js") != "" {
+		InternalServerError(res, req, json.NewEncoder(res).Encode(&response))
+		return
+	}
+	if response.Status != "OK" {
+		message = "Error!: " + response.Status
+	} else {
+		message = response.Data["result"].(map[string]interface{})["transactionHash"].(string)
+	}
+	c := &http.Cookie{
+		Name:  "transactionHash",
+		Path:  "/account",
+		Value: message,
+	}
+	http.SetCookie(res, c)
 	http.Redirect(res, req, hostURI+"/account", http.StatusSeeOther)
 }
