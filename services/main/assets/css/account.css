@@ -59,54 +59,59 @@ body {
   word-wrap: break-word;
 }
 
-  table,
-  thead,
-  tbody,
-  tr,
-  th,
-  td {
-    display: block;
-  }
+table,
+thead,
+tbody,
+tr,
+th,
+td {
+  display: block;
+}
 
-  thead tr {
-    border: 0;
-    clip: rect(0 0 0 0);
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    padding: 0;
-    position: absolute;
-    width: 1px;
-  }
+thead tr {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
 
-  tr + tr {
-    margin-top: 2rem;
-  }
-  tr::after {
-    clear: both;
-    content: '';
-    display: table;
-  }
+tr + tr {
+  margin-top: 2rem;
+}
+tr::after {
+  clear: both;
+  content: '';
+  display: table;
+}
 
-  td {
-    border: none;
-    border-bottom: 1px solid #DDD;
-    float: right;
-    width: 100%;
-  }
-  td::before {
-    content: attr(data-column-label);
-    display: inline-block;
-    font-weight: 600;
-    padding-right: 10px;
-    width: calc(50% - 10px);
-  }
-  td span {
-    display: block;
-    float: right;
-    width: 50%;
-  }
+td {
+  border: none;
+  border-bottom: 1px solid #DDD;
+  float: right;
+  width: 100%;
+}
+td::before {
+  content: attr(data-column-label);
+  display: inline-block;
+  font-weight: 600;
+  padding-right: 10px;
+  width: calc(50% - 10px);
+}
+td span {
+  display: block;
+  float: right;
+  width: 50%;
+}
 
-  #wallet_status {
-    float: right;
-  }
+#wallet_status {
+  float: right;
+}
+
+td span button {
+  cursor: pointer;
+}
+

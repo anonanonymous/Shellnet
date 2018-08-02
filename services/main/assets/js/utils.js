@@ -32,5 +32,4 @@ function copy_addr() {
   input.value = copyText.textContent;
   input.select();
   document.execCommand("copy");
-  alert("Copied: " + input.value);
 }

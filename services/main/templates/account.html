@@ -16,7 +16,7 @@
         <td data-column-label="Available"><span id="available_balance">{{ index .Wallet "balance" "availableBalance" }} TRTL</span></td>
         <td data-column-label="Locked/Unconfirmed"><span id="locked_amount">{{ index .Wallet "balance" "lockedAmount" }} TRTL</span></td>
         <td data-column-label="Address"><span><trtl id="address">{{ .User.Address }}</trtl>
-            <button onclick="copy_addr()">
+            <button onclick="copy_addr()" title="copy address">
                 &#128203;
             </button>
          </span>
