@@ -57,7 +57,7 @@ func authMessage(res http.ResponseWriter, message, page, spec string) error {
 
 // alreadyLoggedIn - checks if the user is already logged in
 func alreadyLoggedIn(res http.ResponseWriter, req *http.Request) bool {
-	usr := sessionGetKeys(req)
+	usr := sessionGetKeys(req, "session")
 	if usr == nil {
 		cookie := &http.Cookie{
 			Name:   "session",
@@ -70,7 +70,7 @@ func alreadyLoggedIn(res http.ResponseWriter, req *http.Request) bool {
 	return true
 }
 
-// wrapper for redis HMSET
+// wrapper for redis HMSET for auth
 func sessionSetKeys(key, uname, addr string) error {
 	conn := sessionDB.Get()
 	_, err := conn.Do(
@@ -82,8 +82,8 @@ func sessionSetKeys(key, uname, addr string) error {
 }
 
 // sessionGetKeys - retrieve info from cookie
-func sessionGetKeys(req *http.Request) *userInfo {
-	cookie, err := req.Cookie("session")
+func sessionGetKeys(req *http.Request, name string) *userInfo {
+	cookie, err := req.Cookie(name)
 	if err != nil {
 		return nil
 	}
@@ -93,7 +93,7 @@ func sessionGetKeys(req *http.Request) *userInfo {
 		return nil
 	}
 	data := &userInfo{
-		Username: sanitizer.Sanitize(reply[0]),
+		Username: reply[0],
 		Address:  reply[1],
 	}
 	return data
@@ -122,9 +122,9 @@ func tryAuth(username, password, method string) *jsonResponse {
 }
 
 // walletCmd - executes a wallet command and returns the result
-func walletCmd(cmd, address string) *jsonResponse {
+func walletCmd(cmd, param string) *jsonResponse {
 	response := jsonResponse{}
-	resb, err := http.Get(walletURI + "/" + cmd + "/" + address)
+	resb, err := http.Get(walletURI + "/" + cmd + "/" + param)
 	if err != nil {
 		return &jsonResponse{Status: err.Error()}
 	}

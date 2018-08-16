@@ -47,6 +47,5 @@ func getUser(username string) (*user, error) {
 		fmt.Println("err: ", err)
 		return nil, err
 	}
-	fmt.Println(usr)
 	return &usr, nil
 }

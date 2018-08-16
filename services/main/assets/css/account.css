@@ -18,9 +18,10 @@ body {
   width: 100%;  
 }
 
-.table-container, .container {
+
+.table-container, .container.tx {
   margin: 10px 0;
-  background-color: #FFF;
+  background-color: #fff;
   border-radius: 3px;
   box-shadow: 0 3px 12px 1px rgba(0, 0, 0, 0.3);
   color: #333;
@@ -28,90 +29,107 @@ body {
   width: 90%;
 }
 @media only screen and (min-width: 801px) {
-  .table-container, .container {
+  .table-container {
     width: 60%;
   }
-}
-
-.table-container h1 {
-  font-weight: 100;
-}
-
-.table-container table {
-  border: 1px solid #333;
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.table-container thead {
-  border-bottom: 1px solid #CCC;
-}
-
-.table-container thead tr {
-  background-color: #F2F2F2;
-}
-
-.table-container th,
-.table-container td {
-  border: 1px solid #F2F2F2;
-  box-sizing: border-box;
-  padding: .5rem 1rem;
-  word-wrap: break-word;
-}
-
-table,
-thead,
-tbody,
-tr,
-th,
-td {
-  display: block;
-}
-
-thead tr {
-  border: 0;
-  clip: rect(0 0 0 0);
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  padding: 0;
-  position: absolute;
-  width: 1px;
-}
-
-tr + tr {
-  margin-top: 2rem;
-}
-tr::after {
-  clear: both;
-  content: '';
-  display: table;
-}
-
-td {
-  border: none;
-  border-bottom: 1px solid #DDD;
-  float: right;
-  width: 100%;
-}
-td::before {
-  content: attr(data-column-label);
-  display: inline-block;
-  font-weight: 600;
-  padding-right: 10px;
-  width: calc(50% - 10px);
-}
-td span {
-  display: block;
-  float: right;
-  width: 50%;
 }
 
 #wallet_status {
   float: right;
 }
 
-td span button {
-  cursor: pointer;
+.table-container table,
+.table-container th,
+.table-container td {
+  word-break: break-all;
+  border: 1px solid #c7c7c7;
+  border-collapse: collapse;
 }
 
+.table-container th {
+  width: 40%;
+}
+
+.table-container th,
+.table-container td {
+  padding: 5px;
+  text-align: left;
+}
+
+/* form correction */
+.input-field span:before {
+  top: 2rem;
+}
+
+input[type=text] {
+  margin: 0 auto;
+}
+
+
+/* trasaction history */
+
+table.tx {
+  width: 100%;
+  min-width: 300px;
+  margin-bottom: 2.4rem;
+  background-color: #fff;
+  color: #20262e;
+  overflow: hidden;
+}
+
+table.tx tr:nth-child(even) {
+  background-color: #ddd;
+}
+
+table.tx th,
+table.tx td:before {
+  color: #28b1de;
+}
+
+table.tx th {
+  display: none;
+}
+
+table.tx th,
+table.tx td {
+  margin: .5rem 2rem;
+  text-align: left;
+}
+
+table.tx td {
+  word-break: break-all;
+  display: block;
+  font-size: 90%;
+}
+
+table.tx td:first-child {
+  padding-top: 1rem;
+}
+
+table.tx td:last-child {
+  min-width: 74px;
+  padding-bottom: 1rem;
+}
+
+table.tx td:before {
+  content: attr(data-th) ':\00a0';
+  font-weight: bold;
+  min-width: 8rem;
+  display: inline-block;
+}
+
+@media (min-width: 900px) {
+  table.tx td:before {
+    display: none;
+  }
+  table.tx th,
+  table.tx td {
+    display: table-cell;
+  }
+  table.tx th,
+  table.tx td,
+  table.tx td:first-child,
+  table.tx td:last-child {
+    padding: 1.5rem 2rem;
+  }
+}

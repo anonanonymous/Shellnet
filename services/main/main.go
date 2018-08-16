@@ -2,16 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"html/template"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
-	"text/template"
 	"time"
 
 	_ "github.com/lib/pq"
-
-	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/gomodule/redigo/redis"
 
@@ -24,7 +22,6 @@ var (
 	walletURI         string
 	sessionDB         *redis.Pool
 	templates         *template.Template
-	sanitizer         *bluemonday.Policy
 )
 
 func init() {
@@ -48,7 +45,6 @@ func init() {
 		panic("Set the WALLET_URI env variable")
 	}
 
-	sanitizer = bluemonday.StrictPolicy()
 	templates = template.Must(template.ParseGlob("templates/*.html"))
 	sessionDB = newPool(redisHost)
 	cleanupHook()
@@ -62,7 +58,9 @@ func main() {
 	router.POST("/signup", signupHandler)
 	router.GET("/login", loginPage)
 	router.GET("/logout", logoutHandler)
-	router.POST("/delete", deleteHandler)
+	router.POST("/account/delete", deleteHandler)
+	router.POST("/account/export_keys", keyHandler)
+	router.GET("/account/keys", walletKeys)
 	router.POST("/login", loginHandler)
 	router.POST("/send_transaction", sendHandler)
 	router.GET("/wallet_info", getWalletInfo)
@@ -75,7 +73,7 @@ func main() {
 func index(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	var err error
 	if alreadyLoggedIn(res, req) {
-		usr := sessionGetKeys(req)
+		usr := sessionGetKeys(req, "session")
 		if usr == nil {
 			http.Error(res, "Couldn't find user session", http.StatusInternalServerError)
 			return
@@ -96,12 +94,11 @@ func accountPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params
 		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
-	usr := sessionGetKeys(req)
+	usr := sessionGetKeys(req, "session")
 	if usr == nil {
 		http.Error(res, "Couldn't find user session", http.StatusInternalServerError)
 		return
 	}
-
 	walletResponse := walletCmd("status", usr.Address)
 	if walletResponse.Status != "OK" {
 		http.Error(res, walletResponse.Status, http.StatusInternalServerError)
@@ -118,11 +115,13 @@ func accountPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params
 		http.SetCookie(res, &http.Cookie{Name: "transactionHash", Path: "/account", MaxAge: -1})
 	}
 
+	txs := walletCmd("transactions/"+usr.Address, "0")
 	data := struct {
-		User     userInfo
-		Wallet   map[string]interface{}
-		PageAttr pageInfo
-	}{User: *usr, Wallet: walletResponse.Data, PageAttr: pg}
+		User         userInfo
+		Wallet       map[string]interface{}
+		PageAttr     pageInfo
+		Transactions map[string]interface{}
+	}{User: *usr, Wallet: walletResponse.Data, PageAttr: pg, Transactions: txs.Data}
 	InternalServerError(res, req, templates.ExecuteTemplate(res, "account.html", data))
 }
 
@@ -214,7 +213,7 @@ func logoutHandler(res http.ResponseWriter, req *http.Request, p httprouter.Para
 		return
 	}
 	cookie, _ := req.Cookie("session")
-	sessionDelKey(cookie.Value)
+	go sessionDelKey(cookie.Value)
 
 	cookie = &http.Cookie{
 		Name:   "session",
@@ -259,7 +258,7 @@ func getWalletInfo(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
-	usr := sessionGetKeys(req)
+	usr := sessionGetKeys(req, "session")
 	if usr == nil {
 		http.Error(res, "Couldn't find user session", http.StatusInternalServerError)
 		return
@@ -277,7 +276,7 @@ func sendHandler(res http.ResponseWriter, req *http.Request, p httprouter.Params
 		return
 	}
 	var message string
-	usr := sessionGetKeys(req)
+	usr := sessionGetKeys(req, "session")
 	if usr == nil {
 		http.Error(res, "Couldn't find user session", http.StatusInternalServerError)
 		return
@@ -313,4 +312,53 @@ func sendHandler(res http.ResponseWriter, req *http.Request, p httprouter.Params
 	}
 	http.SetCookie(res, c)
 	http.Redirect(res, req, hostURI+"/account", http.StatusSeeOther)
+}
+
+// keyHandler - shows the wallet keys of a user
+func keyHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	if !alreadyLoggedIn(res, req) {
+		http.Redirect(res, req, hostURI, http.StatusSeeOther)
+		return
+	}
+	usr := sessionGetKeys(req, "session")
+	password := req.FormValue("password")
+	response := tryAuth(usr.Username, password, "login")
+	if response.Status != "OK" {
+		http.Error(res, response.Status, http.StatusInternalServerError)
+		return
+	}
+	c := &http.Cookie{
+		Name:     "key",
+		Value:    response.Data["sessionID"].(string),
+		HttpOnly: true,
+		Path:     "/account/keys",
+	}
+	http.SetCookie(res, c)
+	sessionSetKeys(response.Data["sessionID"].(string), usr.Username, usr.Address)
+	http.Redirect(res, req, hostURI+"/account/keys", http.StatusSeeOther)
+}
+
+// walletKeys - shows the wallet keys
+func walletKeys(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	if !alreadyLoggedIn(res, req) {
+		http.Redirect(res, req, hostURI, http.StatusSeeOther)
+		return
+	}
+	usr := sessionGetKeys(req, "key")
+	if usr == nil {
+		http.Error(res, "No hackermans allowed", http.StatusInternalServerError)
+		return
+	}
+	cookie, _ := req.Cookie("key")
+	go sessionDelKey(cookie.Value)
+	http.SetCookie(res, &http.Cookie{Name: "key", Path: "/account/keys", MaxAge: -1})
+
+	keys := walletCmd("export_keys", usr.Address)
+
+	data := struct {
+		User userInfo
+		Keys map[string]interface{}
+	}{User: userInfo{Username: usr.Username}, Keys: keys.Data}
+	err := templates.ExecuteTemplate(res, "keys.html", data)
+	InternalServerError(res, req, err)
 }

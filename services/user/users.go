@@ -97,7 +97,7 @@ func signup(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	ih, verif := v.Encode()
 	// sponge
 	fmt.Printf("v: %s, ih: %s\n", verif, ih)
-	resb, err := http.Get(walletURI + "/address")
+	resb, err := http.Get(walletURI + "/create_address")
 	if err != nil {
 		encoder.Encode(jsonResponse{Status: err.Error()})
 		return
@@ -164,15 +164,15 @@ func login(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 
 	proof, ok := srv.ClientOk(cauth)
 	if !ok {
-		encoder.Encode(jsonResponse{Status: "Client proof failed"})
+		encoder.Encode(jsonResponse{Status: "Error: Incorrect Username/Password"})
 		return
 	}
 	if !client.ServerOk(proof) {
-		encoder.Encode(jsonResponse{Status: "Server proof failed"})
+		encoder.Encode(jsonResponse{Status: "Error: Incorrect Username/Password"})
 		return
 	}
 	if 1 != subtle.ConstantTimeCompare(client.RawKey(), srv.RawKey()) {
-		encoder.Encode(jsonResponse{Status: "Keys didn't match"})
+		encoder.Encode(jsonResponse{Status: "Error: Incorrect Username/Password"})
 		return
 	}
 

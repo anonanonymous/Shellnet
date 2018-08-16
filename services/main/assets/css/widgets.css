@@ -1,3 +1,4 @@
+/* alert message */
 .alert .inner {
     padding: 20px;
     background-color: #f44336;
@@ -66,4 +67,65 @@
     padding: 0px;
     border: 0px;
   }
+}
+
+/* modal */
+.checkbox-modal {
+  /*  HIDE THE CHECKBOX */
+  /* INITIALIZE THE LABEL */
+  /* INITIALIZE THE MODAL - DEFAULT HIDDEN */
+  /* TRANSITION */
+}
+.checkbox-modal > input[type="checkbox"] {
+  position: absolute;
+  clip: rect(0, 0, 0, 0);
+  /* SHOW THE CONTENT ON CHECK */
+}
+.checkbox-modal > input[type="checkbox"]:checked ~ .modal-content {
+  margin-top: 0;
+  opacity: 1;
+  visibility: visible;
+}
+.checkbox-modal > input[type="checkbox"]:checked ~ .screen-close {
+  display: block;
+}
+.checkbox-modal > label {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  color: black;
+}
+.checkbox-modal > label.screen-close {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: none;
+  background: rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+.checkbox-modal .modal-content {
+  position: fixed;
+  bottom: 40%;
+  left: 11%;
+  display: block;
+  padding: 15px 15px;
+  width: 72vw;
+  opacity: 0;
+  visibility: hidden;
+  word-break: break-all;
+  z-index: 5;
+  background-color: white;
+  /* MAKE CLOSE BUTTON CLICKABLE */
+}
+.checkbox-modal .modal-content label {
+  display: block;
+  margin-top: 1em;
+  text-align: right;
+  color: red;
+  cursor: pointer;
+}
+.checkbox-modal .modal-content {
+  transition: .25s all ease;
 }

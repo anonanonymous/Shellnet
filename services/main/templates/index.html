@@ -10,10 +10,13 @@
     </head>
     <body>
       <h1 class="title gradient-orange center-text"><code>SHELLNET</code></h1>
-        <h1>Welcome{{ if .User }}, {{ .User.Username }}{{ end }}</h1>
         {{ if .User }}
-        <h5>go to <a href="/account">account</a> or <a href="/logout">logout</a></h5>
+        <h1 class="center-text">Welcome, {{ .User.Username }}</h1>
+		<a href="/account"><button class="gradient-green">account</button></a>
+		<a href="/logout"><button class="gradient-green">logout</button></a>
         {{ else }}
-        <h5>please <a href="/login">login</a> or <a href="/signup">create an account</a></h5>
+        <h1 class="center-text">A secure, easy-to-use wallet for TurtleCoin payments</h1>
+		<a href="/login"><button class="gradient-green">login</button></a>
+		<a href="/signup"><button class="gradient-green">create an account</button></a>
         {{ end }}
 {{ template "footer" }}
