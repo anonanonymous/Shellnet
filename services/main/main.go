@@ -295,11 +295,6 @@ func sendHandler(res http.ResponseWriter, req *http.Request, p httprouter.Params
 	}
 	response := jsonResponse{}
 	json.NewDecoder(resb.Body).Decode(&response)
-	// TODO - return json if user allows scripts in their browser
-	if p.ByName("js") != "" {
-		InternalServerError(res, req, json.NewEncoder(res).Encode(&response))
-		return
-	}
 	if response.Status != "OK" {
 		message = "Error!: " + response.Status
 	} else {
@@ -324,7 +319,7 @@ func keyHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params)
 	password := req.FormValue("password")
 	response := tryAuth(usr.Username, password, "login")
 	if response.Status != "OK" {
-		http.Error(res, response.Status, http.StatusInternalServerError)
+		http.Error(res, "Authentication Failed", http.StatusInternalServerError)
 		return
 	}
 	c := &http.Cookie{

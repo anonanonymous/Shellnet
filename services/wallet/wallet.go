@@ -130,7 +130,7 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 	address := req.FormValue("address")
 	extra := "" // TODO - use for messages
 	response := jsonResponse{}
-	if matched, _ := regexp.MatchString("^(TRTL)[a-zA-Z0-9]{95}$", dest); !matched {
+	if matched, _ := regexp.MatchString("^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})$", dest); !matched {
 		json.NewEncoder(res).Encode(jsonResponse{Status: "Incorrect Address Format"})
 		return
 	}

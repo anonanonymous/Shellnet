@@ -89,7 +89,7 @@ func sessionGetKeys(req *http.Request, name string) *userInfo {
 	}
 	conn := sessionDB.Get()
 	reply, err := redis.Strings(conn.Do("HMGET", cookie.Value, "username", "address"))
-	if err != nil || len(reply) != 2 {
+	if err != nil || len(reply) != 2 || reply[0] == "" {
 		return nil
 	}
 	data := &userInfo{
