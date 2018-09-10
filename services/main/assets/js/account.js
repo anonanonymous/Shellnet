@@ -1,5 +1,5 @@
 function setWalletStatus() {
-    let wallet_info = httpGet("/wallet_info");
+    let wallet_info = httpGet("/account/wallet_info");
     let availableBalance = parseFloat(wallet_info.Data.balance.availableBalance);
     let lockedAmount = parseFloat(wallet_info.Data.balance.lockedAmount);
     let knownBlockCount = wallet_info.Data.status.knownBlockCount;
@@ -22,4 +22,5 @@ function confirmation() {
     let conf_msg = document.getElementById("send_confirmation");
     conf_msg.textContent = "You are sending "+amount+" TRTL to: "+ document.getElementById("send_to").value;
 }
-  window.setInterval(setWalletStatus, 5000);
+
+window.setInterval(setWalletStatus, 5000);

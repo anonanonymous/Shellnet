@@ -7,13 +7,58 @@ body {
 
 body {
   align-items: center;
-  background-image: linear-gradient(135deg, tomato, rebeccapurple);
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
-
+.full-container {
+  display: flex;
+  flex-direction: column;
+  background: url('../images/mountains.svg'); /* Designed by Freepik */
+  background-size: cover;
+  background-position-y: center;
+  height: 100%;
+  width: 100%;
+}
+.header {
+  display: flex;
+  padding: 5px 0;
+  justify-content: center;
+  font-size: 26px;
+  background-color: rgba(0,0,0,0.85);
+  color: #EEE;
+}
+.footer {
+  display: flex;
+  justify-content: center;
+  background-color: rgba(0,0,0,0.85);
+  color: #EEE;
+}
 .title {
     font-family: monospace;
     width: 100%;  
+}
+.content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  align-items: center;
+  background-color: rgba(0,0,0,0.57);
+}
+.tagline {
+  padding: 5px 0;
+  color: #FFFFFF;
+  font-size: 24px;
+  padding-bottom: 16px;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+}
+.button-wrapper {
+  flex: 1;
+}
+
+.btn-primary {
+  margin: 10px;
 }

@@ -3,20 +3,30 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet prefetch" href="https://unpkg.com/unnamed"/>
-        <link rel="stylesheet prefetch" href="/assets/css/main.css"/>
+        <link rel="stylesheet" href="https://unpkg.com/unnamed"/>
+        <link rel="stylesheet" href="/assets/css/main.css"/>
         <link rel="icon" href="/assets/images/fav_icon.ico" type="image/x-icon">
         <title>Shellnet</title>
     </head>
     <body>
-      <h1 class="title gradient-orange center-text"><code>SHELLNET</code></h1>
-        {{ if .User }}
-        <h1 class="center-text">Welcome, {{ .User.Username }}</h1>
-		<a href="/account"><button class="gradient-green">account</button></a>
-		<a href="/logout"><button class="gradient-green">logout</button></a>
-        {{ else }}
-        <h1 class="center-text">A secure, easy-to-use wallet for TurtleCoin payments</h1>
-		<a href="/login"><button class="gradient-green">login</button></a>
-		<a href="/signup"><button class="gradient-green">create an account</button></a>
-        {{ end }}
-{{ template "footer" }}
+        <div class="full-container">
+            <div class="header title">
+                <span>SHELLNET</span>
+            </div>
+            <div class="content">
+                <span class="tagline">A secure, easy-to-use wallet for TurtleCoin payments</span>
+                {{ if .User }}
+                    <span class="tagline">Hello {{ .User.Username }}</span>
+		            <a href="/account"><button class="btn btn-primary gradient-black">account</button></a>
+		            <a href="/logout"><button class="btn btn-primary gradient-black">logout</button></a>
+                {{ else }}
+		            <a href="/login"><button class="btn btn-primary gradient-black">login</button></a>
+		            <a href="/signup"><button class="btn btn-primary gradient-black">create an account</button></a>
+                {{ end }}
+            </div>
+            <footer class="footer">
+                <code>Shellnet &copy; 2018</code>
+            </footer>
+        </div>
+    </body>
+</html>

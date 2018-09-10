@@ -3,6 +3,7 @@
 <div class="table-container">
   <div class="checkbox-modal">
     <a href="/logout">logout</a>
+    <a href="/account/delete">delete account</a>
     <input type="checkbox" id="export_keys" required>
     <label for="export_keys">export keys</label>
     <label for="export_keys" class="screen-close"></label>
@@ -21,7 +22,7 @@
     <span class="caret-icon"></span>&nbsp;status<span>
   </div>
   <strong>Block:&nbsp;</strong><span id="block_count">{{ index .Wallet "status" "blockCount"}}/{{ index .Wallet "status" "knownBlockCount" }}</span>
-  <h1>Wallet Info</h1>
+  <h2>Wallet Info</h2>
   <table>
     <tbody>
       <tr>
@@ -49,7 +50,7 @@
   </table>
 </div>
 <div class="container table-container">
-    <form action={{ printf "%s%s" .PageAttr.URI "/send_transaction"}} method="POST">
+    <form action={{ printf "%s%s" .PageAttr.URI "/account/send_transaction"}} method="POST">
       <div class="input-field green-input">
         <h2>Send Transaction</h2><small>fee: 0.1 TRTL</small><br>
         <span class="caret-icon"></span>
@@ -61,12 +62,12 @@
       </div>
       <div class="checkbox-modal">
         <input type="checkbox" id="send" onchange="confirmation()" required>
-        <label for="send" class="btn btn-primary gradient-green">Send</label>
+        <label for="send" class="btn btn-primary gradient-black">Send</label>
         <label for="send" class="screen-close"></label>
         <div class="modal-content">
           <h2>Confirm Transaction</h2>
           <p id="send_confirmation"><!--You are sending <strong id="amount"></strong> to--></p>
-          <button class="btn btn-primary gradient-green">Confirm</button>
+          <button class="btn btn-primary gradient-black">Confirm</button>
         </div>
       </div>
     </form>
@@ -88,24 +89,17 @@
   <div class="tx">
     <table class="tx">
       <tbody>
-        <tr>
-          <th>Destination</th>
-          <th>Hash</th>
-          <th>Amount</th>
-          <th>Date</th>
-        </tr>
         {{ range $idx, $ele := (index .Transactions "transactions") }}
         <tr>
           {{ if (index $ele "Destination") }}
-          <td data-th="Destination">{{ index $ele "Destination" }}</td>
-          <td data-th="Hash">{{ index $ele "Hash" }}</td>
-          <td data-th="Amount">{{ index $ele "Amount" }}</td>
+          <td><b>Withdrawal</b><br><b>Recipient: </b>{{ index $ele "Destination" }}</td>
+          <td><b>Hash</b><br>{{ index $ele "Hash" }}</td>
+          <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
           {{ else }}
-          <td data-th="Destination"><strong>Payment Received</strong></td>
-          <td data-th="Hash">{{ index $ele "Hash" }}</td>
-          <td data-th="Amount">+{{ index $ele "Amount" }}</td>
+          <td><strong>Deposit</strong></td>
+          <td><b>Hash</b><br>{{ index $ele "Hash" }}</td>
+          <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
           {{ end }}
-          <td data-th="Date">{{ index $ele "Date" }}</td>
         </tr>
         {{ end }}
       </tbody>

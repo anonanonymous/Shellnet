@@ -93,7 +93,10 @@
   position: relative;
   display: inline-block;
   cursor: pointer;
-  color: black;
+	color: #d4d4d4;
+}
+.checkbox-modal a {
+	color: #d4d4d4;
 }
 .checkbox-modal > label.screen-close {
   position: fixed;
@@ -102,6 +105,7 @@
   bottom: 0;
   left: 0;
   display: none;
+  z-index: 1;
   background: rgba(0, 0, 0, 0.5);
   cursor: default;
 }
@@ -116,7 +120,7 @@
   visibility: hidden;
   word-break: break-all;
   z-index: 5;
-  background-color: white;
+  background-color: #4c4c4c;
   /* MAKE CLOSE BUTTON CLICKABLE */
 }
 .checkbox-modal .modal-content label {
