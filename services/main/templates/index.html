@@ -10,19 +10,20 @@
     </head>
     <body>
         <div class="full-container">
-            <div class="header title">
-                <span>SHELLNET</span>
-            </div>
             <div class="content">
-                <span class="tagline">A secure, easy-to-use wallet for TurtleCoin payments</span>
-                {{ if .User }}
-                    <span class="tagline">Hello {{ .User.Username }}</span>
-		            <a href="/account"><button class="btn btn-primary gradient-black">account</button></a>
-		            <a href="/logout"><button class="btn btn-primary gradient-black">logout</button></a>
-                {{ else }}
-		            <a href="/login"><button class="btn btn-primary gradient-black">login</button></a>
-		            <a href="/signup"><button class="btn btn-primary gradient-black">create an account</button></a>
-                {{ end }}
+                <div class="content-panel">
+                    <span class="title landing-title">SHELLNET</span>
+                    <img src="/assets/images/swanson-white-64.png"></img>
+                    <span class="tagline">A secure, easy-to-use wallet for TurtleCoin payments</span>
+                    {{ if .User }}
+                        <span class="hello-user">Hello {{ .User.Username }}</span>
+    		            <a href="/account"><button class="btn btn-primary button-green">account</button></a>
+    		            <a href="/logout" class="signup-link"><span>logout</span></a>
+                    {{ else }}
+    		            <a href="/login"><button class="btn btn-primary button-green">login</button></a>
+    		            <a href="/signup" class="signup-link"><span>create an account</span></a>
+                    {{ end }}
+                </div>
             </div>
             <footer class="footer">
                 <code>Shellnet &copy; 2018</code>
