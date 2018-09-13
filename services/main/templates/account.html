@@ -1,5 +1,7 @@
 {{ template "header" }}
-<h1 class="title gradient-orange center-text"><code>SHELLNET</code></h1>
+<div class="title center-text">
+    <span>SHELLNET</span>
+</div>
 <div class="table-container">
   <div class="checkbox-modal">
     <a href="/logout">logout</a>
@@ -10,10 +12,11 @@
     <div class="modal-content">
       <h2>Enter your password</h2>
       <form action="{{ printf "%s%s" .PageAttr.URI "/account/export_keys" }}" method="POST">
-        <div class="input-field green-input">
-          <input type="password" name="password" placeholder="password" required/>
+        <div class="input-field grey-input">
+            <span class="lock-icon"></span>
+            <input type="password" name="password" placeholder="password" required/>
         </div>
-        <button class="btn btn-primary gradient-green">Confirm</button>
+        <button class="btn btn-primary button-green">Confirm</button>
       </form>
     </div>
   </div>
@@ -34,7 +37,7 @@
         <td><span id="available_balance">{{ printf "%.2f" (index .Wallet "balance" "availableBalance") }}</span> TRTL</td>
       </tr>
       <tr>
-        <th>Locked/Unconfirmed</th>
+        <th>Locked / Unconfirmed</th>
         <td><span id="locked_amount">{{ printf "%.2f" (index .Wallet "balance" "lockedAmount") }}</span> TRTL</td>
       </tr>
       <tr>
@@ -49,25 +52,25 @@
     </tbody>
   </table>
 </div>
-<div class="container table-container">
+<div class="table-container">
     <form action={{ printf "%s%s" .PageAttr.URI "/account/send_transaction"}} method="POST">
-      <div class="input-field green-input">
+      <div class="input-field grey-input">
         <h2>Send Transaction</h2><small>fee: 0.1 TRTL</small><br>
         <span class="caret-icon"></span>
         <input id="send_to" type="text" name="destination" placeholder="Enter destination address..." pattern="^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})$" required/>
-        <span class="caret-icon"></span>
+        <span class="amount-icon"></span>
         <input id="send_amount" type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.{0,1}\d{0,2}$" required/>
-        <span class="caret-icon"></span>
+        <span class="paymentid-icon"></span>
         <input type="text" name="payment_id" placeholder="Enter Payment ID..." pattern="^[a-fA-F\d]{64}$"/>
       </div>
       <div class="checkbox-modal">
         <input type="checkbox" id="send" onchange="confirmation()" required>
-        <label for="send" class="btn btn-primary gradient-black">Send</label>
+        <label for="send" class="btn btn-primary button-green">Send</label>
         <label for="send" class="screen-close"></label>
         <div class="modal-content">
           <h2>Confirm Transaction</h2>
           <p id="send_confirmation"><!--You are sending <strong id="amount"></strong> to--></p>
-          <button class="btn btn-primary gradient-black">Confirm</button>
+          <button class="btn btn-primary button-green">Confirm</button>
         </div>
       </div>
     </form>

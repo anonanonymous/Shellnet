@@ -1,0 +1,47 @@
+/* Icons */
+.address-icon:before {
+    content: "";
+}
+.amount-icon:before {
+  content: "∑";
+}
+.lock-icon:before {
+    content: "";
+}
+.paymentid-icon:before {
+  content: "";
+}
+
+/* Input colors */
+.grey-input input[type=email],
+.grey-input input[type=file],
+.grey-input input[type=number],
+.grey-input input[type=password],
+.grey-input input[type=search],
+.grey-input input[type=tel],
+.grey-input input[type=text],
+.grey-input input[type=url],
+.grey-input select,
+.grey-input textarea,
+.grey-input textarea[type=text] {
+    border-color: #CCC !important;
+}
+
+.grey-input input[type=email]:focus,
+.grey-input input[type=file]:focus,
+.grey-input input[type=number]:focus,
+.grey-input input[type=password]:focus,
+.grey-input input[type=search]:focus,
+.grey-input input[type=tel]:focus,
+.grey-input input[type=text]:focus,
+.grey-input input[type=url]:focus,
+.grey-input select:focus,
+.grey-input textarea:focus,
+.grey-input textarea[type=text]:focus {
+    border-color: #FFF !important;
+    box-shadow: 0px 0px 3px #FFF;
+}
+
+.grey-input span:before {
+    color: #D9D9D9 !important;
+}

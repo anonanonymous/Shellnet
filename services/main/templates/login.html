@@ -4,9 +4,10 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="icon" href="/assets/images/fav_icon.ico" type="image/x-icon">
-        <link rel="stylesheet prefetch" href="https://unpkg.com/unnamed"/>
+        <link rel="stylesheet prefetch" href="https://unpkg.com/unnamed" crossorigin="anonymous"/>
         <link rel="stylesheet prefetch" href="/assets/css/tabs.css"/>
         <link rel="stylesheet prefetch" href="/assets/css/widgets.css"/>
+        <link rel="stylesheet preload" href="/assets/css/shellnet.common.css"/>
         <link rel="stylesheet" href="/assets/css/main.css"/>
         <title>Shellnet</title>
     </head>
@@ -47,13 +48,13 @@
                         <div class="container">
                         <h1 class="center-text">Log Into Your Account</h1>
                         <form action={{ printf "%s%s" .PageAttr.URI "/login" }} method="POST">
-                            <div class="input-field green-input">
+                            <div class="input-field grey-input">
                             <span class="user-icon"></span>
                             <input type="text" name="username" placeholder="username" autofocus="" pattern="^.{1,64}$" required/>
                             </div>
 
-                            <div class="input-field green-input">
-                            <span class="caret-icon"></span>
+                            <div class="input-field grey-input">
+                            <span class="lock-icon"></span>
                             <input type="password" name="password" placeholder="password" required/>
                             </div>
                             <button class="btn btn-primary button-green">Login</button>
@@ -65,17 +66,17 @@
                         <div class="container">
                             <h1 class="center-text">Create a New Account</h1>
                                 <form action={{ printf "%s%s" .PageAttr.URI "/signup" }} method="POST">
-                                    <div class="input-field green-input">
+                                    <div class="input-field grey-input">
                                         <span class="user-icon"></span>
                                         <input type="text" name="username" placeholder="username" autofocus="" pattern="^.{1,64}$" required/>
                                     </div>
 
-                                    <div class="input-field green-input">
-                                        <span class="caret-icon"></span>
+                                    <div class="input-field grey-input">
+                                        <span class="lock-icon"></span>
                                         <input type="password" name="password" placeholder="password" required/>
                                     </div>
-                                    <div class="input-field green-input">
-                                        <span class="caret-icon"></span>
+                                    <div class="input-field grey-input">
+                                        <span class="lock-icon"></span>
                                         <input type="password" name="verify_password" placeholder="verify password" required/>
                                     </div>
                                     <button class="btn btn-primary button-green">Signup</button>
