@@ -108,3 +108,12 @@ input[type="radio"] {
 .tab_container .link {
   text-align: center;
 }
+
+input[type=text] {
+    background-color: rgba(0,0,0,0.3);
+    color: #d4d4d4;
+}
+input[type=password] {
+    background-color: rgba(0,0,0,0.3);
+    color: #d4d4d4;
+}
