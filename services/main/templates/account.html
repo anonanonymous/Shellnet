@@ -5,7 +5,7 @@
 <div class="table-container">
   <div class="checkbox-modal">
     <a href="/logout">logout</a>
-    <a href="/account/delete" id="delete_button">delete account</a>
+    <!--<a href="/account/delete" id="delete_button">delete account</a>-->
     <input type="checkbox" id="export_keys" required>
     <label for="export_keys">export keys</label>
     <label for="export_keys" class="screen-close"></label>
@@ -18,6 +18,19 @@
         </div>
         <button class="btn btn-primary button-green">Confirm</button>
       </form>
+    </div>
+ 
+    <div class="checkbox-modal" id="delete_button">
+      <input type="checkbox" id="delete" required>
+      <label for="delete">delete account</label>
+      <label for="delete" class="screen-close"></label>
+      <div class="modal-content">
+        <h2>Delete Account</h2>
+        <p>Your account and wallet will be removed. Save your wallet keys before account deletion!!</p>
+        <form action="{{ printf "%s%s" .PageAttr.URI "/account/delete" }}" method="POST">
+          <button class="btn btn-primary button-green">Confirm</button>
+        </form>
+      </div>
     </div>
   </div>
   <hr>
