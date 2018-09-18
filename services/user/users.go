@@ -10,38 +10,31 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/microcosm-cc/bluemonday"
-
 	_ "github.com/lib/pq"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/opencoff/go-srp"
 )
 
-const dbUser = "dsanon"
-const dbPwd = "86a8c07323ea5e56dc8e8ed70191a04cea0c2daa7030993d01d8ba3e64076bc2"
-
 var (
+	dbUser, dbPwd     string
 	hostURI, hostPort string
 	walletURI         string
-	sanitizer         *bluemonday.Policy
 	srpEnv            *srp.SRP
 	db                *sql.DB
 )
 
 const nBits = 1024
 
-type user struct {
-	ID       int
-	IH       string
-	Username string
-	Verifier string
-	Address  string
-}
-
 func init() {
 	var err error
 
+	if dbUser = os.Getenv("DB_USER"); dbUser == "" {
+		panic("Set the DB_USER env variable")
+	}
+	if dbPwd = os.Getenv("DB_PWD"); dbPwd == "" {
+		panic("Set the DB_PWD env variable")
+	}
 	if hostURI = os.Getenv("HOST_URI"); hostURI == "" {
 		hostURI = "http://localhost"
 		println("Using default HOST_URI - http://localhost")
@@ -51,6 +44,7 @@ func init() {
 		println("Using default HOST_PORT - 8081")
 	}
 	hostURI += hostPort
+
 	if walletURI = os.Getenv("WALLET_URI"); walletURI == "" {
 		panic("Set the WALLET_URI env variable")
 	}
@@ -58,7 +52,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	sanitizer = bluemonday.StrictPolicy()
 
 	db, err = sql.Open("postgres", "postgres://"+dbUser+":"+dbPwd+"@localhost/users?sslmode=disable")
 	if err != nil {
@@ -74,7 +67,7 @@ func main() {
 	router := httprouter.New()
 	router.POST("/signup", signup)
 	router.POST("/login", login)
-	router.DELETE("/user/:username", deleteUser)
+	router.GET("/delete/:username", deleteUser)
 	log.Fatal(http.ListenAndServe(hostPort, router))
 }
 
@@ -95,9 +88,7 @@ func signup(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 		return
 	}
 	ih, verif := v.Encode()
-	// sponge
-	fmt.Printf("v: %s, ih: %s\n", verif, ih)
-	resb, err := http.Get(walletURI + "/create_address")
+	resb, err := http.Get(walletURI + "/create")
 	if err != nil {
 		encoder.Encode(jsonResponse{Status: err.Error()})
 		return
@@ -185,8 +176,6 @@ func login(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 // deleteUser - removes user from db, deletes user address from container
 func deleteUser(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	encoder := json.NewEncoder(res)
-
 	db.Exec("DELETE FROM accounts WHERE username = $1;", p.ByName("username"))
-
 	encoder.Encode(jsonResponse{Status: "OK"})
 }

@@ -12,6 +12,14 @@ type jsonResponse struct {
 	Data   map[string]interface{}
 }
 
+type user struct {
+	ID       int
+	IH       string
+	Username string
+	Verifier string
+	Address  string
+}
+
 // decodeResponse - decodes the json data from a Response
 func decodeResponse(resb *http.Response) (map[string]interface{}, error) {
 	response := map[string]interface{}{}

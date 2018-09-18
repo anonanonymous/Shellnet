@@ -16,10 +16,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-const dbUser = "dsanon"
-const dbPwd = "86a8c07323ea5e56dc8e8ed70191a04cea0c2daa7030993d01d8ba3e64076bc2"
-
 var (
+	dbUser, dbPwd     string
 	hostURI, hostPort string
 	rpcPort           int
 	rpcPwd            string
@@ -29,6 +27,13 @@ var (
 func init() {
 	var err error
 
+	if dbUser = os.Getenv("DB_USER"); dbUser == "" {
+		panic("Set the DB_USER env variable")
+	}
+	if dbPwd = os.Getenv("DB_PWD"); dbPwd == "" {
+		panic("Set the DB_PWD env variable")
+	}
+
 	walletDB, err = sql.Open("postgres", "postgres://"+dbUser+":"+dbPwd+"@localhost/tx_history?sslmode=disable")
 	if err != nil {
 		panic(err)
@@ -36,6 +41,7 @@ func init() {
 	if err = walletDB.Ping(); err != nil {
 		panic(err)
 	}
+
 	fmt.Println("You connected to your database.")
 	if hostURI = os.Getenv("HOST_URI"); hostURI == "" {
 		hostURI = "http://localhost"
@@ -58,14 +64,15 @@ func init() {
 func main() {
 	router := httprouter.New()
 	router.GET("/status/:address", getStatus)
-	router.GET("/create_address", newAddress)
+	router.GET("/delete/:address", deleteAddress)
+	router.GET("/create", newAddress)
 	router.GET("/export_keys/:address", exportKeys)
 	router.GET("/transactions/:address/:n", getTransactions)
 	router.POST("/send_transaction", sendTransaction)
 	log.Fatal(http.ListenAndServe(hostPort, router))
 }
 
-// createWallets - creates a new wallet
+// createWallet - creates a new wallet
 func createWallet() (string, error) {
 	response := map[string]interface{}{}
 	walletdResponse := walletd.CreateAddress(
@@ -91,6 +98,20 @@ func newAddress(res http.ResponseWriter, req *http.Request, _ httprouter.Params)
 	encoder.Encode(jsonResponse{Status: "OK", Data: data})
 }
 
+// deleteAddress - removes address from container
+func deleteAddress(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
+	address := p.ByName("address")
+	walletd.DeleteAddress(
+		rpcPwd,
+		"localhost",
+		rpcPort,
+		address,
+	)
+	walletDB.Exec(`DELETE FROM transactions
+			WHERE addr_id = (SELECT id FROM addresses WHERE address = $1);`, address)
+	walletDB.Exec("DELETE FROM addresses WHERE address = $1;", address)
+}
+
 // getStatus - gets the balance and status of a wallet
 func getStatus(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	address := p.ByName("address")
@@ -103,10 +124,7 @@ func getStatus(res http.ResponseWriter, req *http.Request, p httprouter.Params) 
 		address,
 	)
 	json.NewDecoder(walletdResponse).Decode(&temp)
-	trtl := (temp["result"].(map[string]interface{})["availableBalance"].(float64) - 10) / 100
-	if trtl < 0 {
-		trtl = 0
-	}
+	trtl := temp["result"].(map[string]interface{})["availableBalance"].(float64) / 100
 	temp["result"].(map[string]interface{})["availableBalance"] = trtl
 	trtl = temp["result"].(map[string]interface{})["lockedAmount"].(float64)
 	temp["result"].(map[string]interface{})["lockedAmount"] = trtl / 100
@@ -157,7 +175,7 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 		},
 		10,
 		0, // unlock time
-		7, // mixin
+		3, // mixin
 		extra,
 		paymentID,
 		"", // change address
@@ -174,8 +192,8 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 // getTransactions - gets transaction history from the database
 func getTransactions(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	encoder := json.NewEncoder(res)
-	rows, err := walletDB.Query(`SELECT dest, hash, amount, date, id FROM transactions
-							     WHERE source = $1 AND id > $2 ORDER BY id DESC LIMIT 15;`,
+	rows, err := walletDB.Query(`SELECT dest, hash, amount, pID, id FROM transactions
+								 WHERE addr_id = (SELECT id FROM addresses WHERE address = $1) AND id > $2 ORDER BY id DESC LIMIT 15;`,
 		p.ByName("address"), p.ByName("n"))
 
 	if err != nil {
@@ -183,18 +201,17 @@ func getTransactions(res http.ResponseWriter, req *http.Request, p httprouter.Pa
 		return
 	}
 
-	var tmp []byte
+	var tmp string
 	txs := make([]transaction, 0)
 	for rows.Next() {
 		tx := transaction{}
-		err := rows.Scan(&tmp, &tx.Hash, &tx.Amount, &tx.Date, &tx.ID)
+		err := rows.Scan(&tmp, &tx.Hash, &tx.Amount, &tx.PaymentID, &tx.ID)
 		if err != nil {
 			encoder.Encode(jsonResponse{Status: err.Error()})
 			return
 		}
-		tx.Date = tx.Date[:10] // remove time
-		if tmp != nil {
-			tx.Destination = string(tmp)
+		if tmp[0] != ' ' {
+			tx.Destination = tmp
 		}
 		txs = append(txs, tx)
 	}
