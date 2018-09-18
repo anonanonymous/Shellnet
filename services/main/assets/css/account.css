@@ -7,7 +7,7 @@ body {
 body {
     height: 100%;
     align-items: center;
-    background: url('https://shellnet.pw/assets/images/mountains.svg');
+    background: url('/assets/images/mountains.svg');
     background-size: cover;
     background-position-y: center;
     display: flex;
@@ -54,6 +54,11 @@ body {
 }
 
 #wallet_status {
+    float: right;
+}
+
+#delete_button {
+    position: relative;
     float: right;
 }
 
@@ -135,6 +140,7 @@ table.tx td {
 
 table.tx td:first-child {
     padding-top: 1rem;
+    word-break: keep-all;
 }
 
 table.tx td:last-child {

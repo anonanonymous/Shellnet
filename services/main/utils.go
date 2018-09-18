@@ -139,7 +139,7 @@ func walletCmd(cmd, param string) *jsonResponse {
 func walletStatusColor(res *jsonResponse) string {
 	a := res.Data["status"].(map[string]interface{})["knownBlockCount"].(float64)
 	b := res.Data["status"].(map[string]interface{})["blockCount"].(float64)
-	if a-b < 5 && b > 0 {
+	if b-a < 5 && b > 0 {
 		return "green-input"
 	}
 	return "orange-input"

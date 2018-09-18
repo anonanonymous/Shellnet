@@ -5,7 +5,7 @@
 <div class="table-container">
   <div class="checkbox-modal">
     <a href="/logout">logout</a>
-    <a href="/account/delete">delete account</a>
+    <a href="/account/delete" id="delete_button">delete account</a>
     <input type="checkbox" id="export_keys" required>
     <label for="export_keys">export keys</label>
     <label for="export_keys" class="screen-close"></label>
@@ -55,7 +55,7 @@
 <div class="table-container">
     <form action={{ printf "%s%s" .PageAttr.URI "/account/send_transaction"}} method="POST">
       <div class="input-field grey-input">
-        <h2>Send Transaction</h2><small>fee: 0.1 TRTL</small><br>
+        <h2>Send Transaction</h2><small>fee: 250.1 TRTL</small><br>
         <span class="caret-icon"></span>
         <input id="send_to" type="text" name="destination" placeholder="Enter destination address..." pattern="^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})$" required/>
         <span class="amount-icon"></span>
@@ -95,12 +95,12 @@
         {{ range $idx, $ele := (index .Transactions "transactions") }}
         <tr>
           {{ if (index $ele "Destination") }}
-          <td><b>Withdrawal</b><br><b>Recipient: </b>{{ index $ele "Destination" }}</td>
-          <td><b>Hash</b><br>{{ index $ele "Hash" }}</td>
+          <td><b>Withdrawal</b><br></td>
+          <td><b>Recipient</b><br>{{ index $ele "Destination" }}<br><b>Hash</b><br>{{ index $ele "Hash" }}<br><b>PaymentId</b><br>"{{ index $ele "PaymentID"}}"</td>
           <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
           {{ else }}
           <td><strong>Deposit</strong></td>
-          <td><b>Hash</b><br>{{ index $ele "Hash" }}</td>
+          <td><b>Hash</b><br>{{ index $ele "Hash" }}<br><b>PaymentId</b><br>"{{ index $ele "PaymentID"}}"</td>
           <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
           {{ end }}
         </tr>

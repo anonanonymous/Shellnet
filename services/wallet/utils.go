@@ -10,5 +10,6 @@ type transaction struct {
 	Hash        string
 	Amount      string
 	Date        string
+	PaymentID   string
 	ID          string
 }
