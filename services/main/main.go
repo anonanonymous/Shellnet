@@ -53,17 +53,17 @@ func init() {
 func main() {
 	router := httprouter.New()
 	router.GET("/", index)
-	router.GET("/signup", signupPage)
-	router.GET("/account", accountPage)
-	router.POST("/signup", signupHandler)
 	router.GET("/login", loginPage)
-	router.GET("/logout", logoutHandler)
-	router.POST("/account/delete", deleteHandler)
-	router.POST("/account/export_keys", keyHandler)
-	router.GET("/account/keys", walletKeys)
 	router.POST("/login", loginHandler)
-	router.POST("/send_transaction", sendHandler)
-	router.GET("/wallet_info", getWalletInfo)
+	router.GET("/logout", logoutHandler)
+	router.GET("/signup", signupPage)
+	router.POST("/signup", signupHandler)
+	router.GET("/account", accountPage)
+	router.GET("/account/keys", walletKeys)
+	router.GET("/account/delete", deleteHandler)
+	router.GET("/account/wallet_info", getWalletInfo)
+	router.POST("/account/export_keys", keyHandler)
+	router.POST("/account/send_transaction", sendHandler)
 	router.Handler(http.MethodGet, "/assets/*filepath", http.StripPrefix("/assets",
 		http.FileServer(http.Dir("./assets"))))
 	log.Fatal(http.ListenAndServe(hostPort, router))
@@ -101,7 +101,7 @@ func accountPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params
 	}
 	walletResponse := walletCmd("status", usr.Address)
 	if walletResponse.Status != "OK" {
-		http.Error(res, walletResponse.Status, http.StatusInternalServerError)
+		http.Error(res, "Error loading wallet status", http.StatusInternalServerError)
 		return
 	}
 	walletIcon := walletStatusColor(walletResponse)
@@ -191,15 +191,22 @@ func loginHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Param
 	http.Redirect(res, req, hostURI+"/account", http.StatusSeeOther)
 }
 
-// deleteHandler - TODO - delete user from database
+// deleteHandler - deletes user from database and deletes wallet
 func deleteHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	if !alreadyLoggedIn(res, req) {
 		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
+	usr := sessionGetKeys(req, "session")
+	if usr == nil {
+		http.Error(res, "Couldn't find user session", http.StatusInternalServerError)
+		return
+	}
+	go walletCmd("delete", usr.Address)
+	go http.Get(usrURI + "/delete/" + usr.Username)
 	cookie := &http.Cookie{
 		Name:   "session",
-		Value:  "",
+		Path:   "/",
 		MaxAge: -1,
 	}
 	http.SetCookie(res, cookie)
