@@ -60,7 +60,7 @@ func main() {
 	router.POST("/signup", signupHandler)
 	router.GET("/account", accountPage)
 	router.GET("/account/keys", walletKeys)
-	router.GET("/account/delete", deleteHandler)
+	router.POST("/account/delete", deleteHandler)
 	router.GET("/account/wallet_info", getWalletInfo)
 	router.POST("/account/export_keys", keyHandler)
 	router.POST("/account/send_transaction", sendHandler)
