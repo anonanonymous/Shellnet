@@ -96,6 +96,7 @@ input[type=password] {
 }
 
 .button-green {
+    margin-top: 16px;
     color: #FEFEFE !important;
     background-color: #04A148;
 }
