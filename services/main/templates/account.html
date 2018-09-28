@@ -1,0 +1,127 @@
+{{ template "header" }}
+<div class="title center-text">
+    <span>SHELLNET</span>
+</div>
+<div class="table-container">
+  <div class="checkbox-modal">
+    <a href="/logout">logout</a>
+    <!--<a href="/account/delete" id="delete_button">delete account</a>-->
+    <input type="checkbox" id="export_keys" required>
+    <label for="export_keys">export keys</label>
+    <label for="export_keys" class="screen-close"></label>
+    <div class="modal-content">
+      <h2>Enter your password</h2>
+      <form action="{{ printf "%s%s" .PageAttr.URI "/account/export_keys" }}" method="POST">
+        <div class="input-field grey-input">
+            <span class="lock-icon"></span>
+            <input type="password" name="password" placeholder="password" required/>
+        </div>
+        <button class="btn btn-primary button-green">Confirm</button>
+      </form>
+    </div>
+ 
+    <div class="checkbox-modal" id="delete_button">
+      <input type="checkbox" id="delete" required>
+      <label for="delete">delete account</label>
+      <label for="delete" class="screen-close"></label>
+      <div class="modal-content">
+        <h2>Delete Account</h2>
+        <p>Your account and wallet will be removed. Save your wallet keys before account deletion!!</p>
+        <form action="{{ printf "%s%s" .PageAttr.URI "/account/delete" }}" method="POST">
+          <button class="btn btn-primary button-green">Confirm</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <hr>
+  <div id="wallet_status"  class="{{ index .PageAttr.Messages "wallet_icon"}}">
+    <span class="caret-icon"></span>&nbsp;status<span>
+  </div>
+  <strong>Block:&nbsp;</strong><span id="block_count">{{ index .Wallet "status" "blockCount"}}/{{ index .Wallet "status" "knownBlockCount" }}</span>
+  <h2>Wallet Info</h2>
+  <table>
+    <tbody>
+      <tr>
+        <th>Name</th>
+        <td>{{ .User.Username }}</td>
+      </tr>
+      <tr>
+        <th>Available</th>
+        <td><span id="available_balance">{{ printf "%.2f" (index .Wallet "balance" "availableBalance") }}</span> TRTL</td>
+      </tr>
+      <tr>
+        <th>Locked / Unconfirmed</th>
+        <td><span id="locked_amount">{{ printf "%.2f" (index .Wallet "balance" "lockedAmount") }}</span> TRTL</td>
+      </tr>
+      <tr>
+        <th>Address</th>
+        <td>
+          <trtl id="address">{{ .User.Address }}</trtl>
+          <button onclick="copy_ele('address')" title="copy address">
+            <i class="fa fa-copy"></i>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div class="table-container">
+    <form action={{ printf "%s%s" .PageAttr.URI "/account/send_transaction"}} method="POST">
+      <div class="input-field grey-input">
+        <h2>Send Transaction</h2><small>fee: 250.1 TRTL</small><br>
+        <span class="caret-icon"></span>
+        <input id="send_to" type="text" name="destination" placeholder="Enter destination address..." pattern="^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})$" required/>
+        <span class="amount-icon"></span>
+        <input id="send_amount" type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.{0,1}\d{0,2}$" required/>
+        <span class="paymentid-icon"></span>
+        <input type="text" name="payment_id" placeholder="Enter Payment ID..." pattern="^[a-fA-F\d]{64}$"/>
+      </div>
+      <div class="checkbox-modal">
+        <input type="checkbox" id="send" onchange="confirmation()" required>
+        <label for="send" class="btn btn-primary button-green">Send</label>
+        <label for="send" class="screen-close"></label>
+        <div class="modal-content">
+          <h2>Confirm Transaction</h2>
+          <p id="send_confirmation"><!--You are sending <strong id="amount"></strong> to--></p>
+          <button class="btn btn-primary button-green">Confirm</button>
+        </div>
+      </div>
+    </form>
+    {{ if index .PageAttr.Messages "txHash" }}
+    <div class="alert success">
+        <input type="checkbox" id="alert1"/>
+        <label class="close" title="close" for="alert1">&times
+        </label>
+        <p class="inner">
+        <strong class="center-text">Transaction Hash</strong> {{ index .PageAttr.Messages "txHash" }}
+        </p>
+    </div>
+    {{ end }}
+  </div>
+</div>
+
+<div class="container tx">
+  <h1>Latest Transactions</h1>
+  <div class="tx">
+    <table class="tx">
+      <tbody>
+        {{ range $idx, $ele := (index .Transactions "transactions") }}
+        <tr>
+          {{ if (index $ele "Destination") }}
+          <td><b>Withdrawal</b><br></td>
+          <td><b>Recipient</b><br>{{ index $ele "Destination" }}<br><b>Hash</b><br>{{ index $ele "Hash" }}<br><b>PaymentId</b><br>"{{ index $ele "PaymentID"}}"</td>
+          <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
+          {{ else }}
+          <td><strong>Deposit</strong></td>
+          <td><b>Hash</b><br>{{ index $ele "Hash" }}<br><b>PaymentId</b><br>"{{ index $ele "PaymentID"}}"</td>
+          <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
+          {{ end }}
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<input style="bottom: 100%; position: absolute;" id="temp_input" readonly></input>
+{{ template "footer" }}

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" href="/assets/images/fav_icon.ico" type="image/x-icon">
+        <link rel="stylesheet prefetch" href="https://unpkg.com/unnamed" crossorigin="anonymous"/>
+        <link rel="stylesheet prefetch" href="/assets/css/tabs.css"/>
+        <link rel="stylesheet prefetch" href="/assets/css/widgets.css"/>
+        <link rel="stylesheet preload" href="/assets/css/shellnet.common.css"/>
+        <link rel="stylesheet" href="/assets/css/main.css"/>
+        <title>Shellnet</title>
+    </head>
+    <body>
+        <div class="full-container">
+            <div class="header title">
+                <span>SHELLNET</span>
+            </div>
+            <div class="content">
+                <div class="tab_container container">
+                        {{ if index .PageAttr.Messages "error"}}
+                        <div class="alert error">
+                            <input type="checkbox" id="alert1"/>
+                            <label class="close" title="close" for="alert1">&times
+                            </label>
+                            <p class="inner">
+                            <strong>Error!</strong> {{ index .PageAttr.Messages "error" }}
+                            </p>
+                        </div>
+                        {{ end }}
+                        {{ if index .PageAttr.Messages "success"}}
+                        <div class="alert success">
+                            <input type="checkbox" id="alert1"/>
+                            <label class="close" title="close" for="alert1">&times
+                            </label>
+                            <p class="inner">
+                            <strong>Success!</strong> {{ index .PageAttr.Messages "success" }}
+                            </p>
+                        </div>
+                        {{ end }}
+                    <input id="tab1" type="radio" name="tabs" {{ if eq .PageAttr.Element "login" }}checked{{ end }}>
+                    <label for="tab1"><span>Login</span></label>
+
+                    <input id="tab2" type="radio" name="tabs" {{ if eq .PageAttr.Element "signup" }}checked{{ end }}>
+                    <label for="tab2"><span>Signup</span></label>
+
+                    <section id="content1" class="tab-content">
+                        <div class="container">
+                        <h1 class="center-text">Log Into Your Account</h1>
+                        <form action={{ printf "%s%s" .PageAttr.URI "/login" }} method="POST">
+                            <div class="input-field grey-input">
+                            <span class="user-icon"></span>
+                            <input type="text" name="username" placeholder="username" autofocus="" pattern="^.{1,64}$" required/>
+                            </div>
+
+                            <div class="input-field grey-input">
+                            <span class="lock-icon"></span>
+                            <input type="password" name="password" placeholder="password" required/>
+                            </div>
+                            <button class="btn btn-primary button-green">Login</button>
+                        </form>
+                        </div>
+                    </section>
+
+                    <section id="content2" class="tab-content">
+                        <div class="container">
+                            <h1 class="center-text">Create a New Account</h1>
+                                <form action={{ printf "%s%s" .PageAttr.URI "/signup" }} method="POST">
+                                    <div class="input-field grey-input">
+                                        <span class="user-icon"></span>
+                                        <input type="text" name="username" placeholder="username" autofocus="" pattern="^.{1,64}$" required/>
+                                    </div>
+
+                                    <div class="input-field grey-input">
+                                        <span class="lock-icon"></span>
+                                        <input type="password" name="password" placeholder="password" required/>
+                                    </div>
+                                    <div class="input-field grey-input">
+                                        <span class="lock-icon"></span>
+                                        <input type="password" name="verify_password" placeholder="verify password" required/>
+                                    </div>
+                                    <button class="btn btn-primary button-green">Signup</button>
+                                </form>
+                            </div>
+                    </section>
+                </div>
+            </div>
+            <footer class="footer">
+                <code>Shellnet &copy; 2018</code>
+            </footer>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,119 @@
+
+.clearfix:before,
+.clearfix:after {
+    content: " ";
+    display: table;
+}
+
+.clearfix:after {
+    clear: both;
+}
+
+.tab_container a {
+  color: #ccc;
+  text-decoration: none;
+  outline: none;
+}
+
+/*Fun begins*/
+.tab_container {
+    /*width: 100%;*/
+    /*margin: 10% auto 0 auto;*/
+    padding: 0;
+    position: relative;
+}
+
+.tab_container.input, .tab_container section {
+  clear: both;
+  padding-top: 10px;
+  display: none;
+}
+
+.tab_container label {
+  display: block;
+  float: left;
+  width: 25%;
+  padding: 10px;
+  color: #FEFEFE;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  background: rgba(0,0,0,0.55);
+}
+.tab_container label:hover {
+  background: rgba(0,0,0,0.6);
+}
+
+#tab1:checked ~ #content1,
+#tab2:checked ~ #content2 {
+  display: block;
+  padding: 20px;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+}
+
+.tab_container .tab-content p,
+.tab_container .tab-content h3 {
+  -webkit-animation: fadeInScale 0.7s ease-in-out;
+  -moz-animation: fadeInScale 0.7s ease-in-out;
+  animation: fadeInScale 0.7s ease-in-out;
+}
+.tab_container .tab-content h3  {
+  text-align: center;
+}
+
+.tab_container [id^="tab"]:checked + label {
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    box-shadow: inset 0 3px #EE4335;
+}
+
+.tab_container [id^="tab"]:checked + label .fa {
+  color: #46a042;
+}
+
+.tab_container label .fa {
+  font-size: 1.3em;
+  margin: 0 0.4em 0 0;
+}
+
+input[type="radio"] {
+    display: none;
+}
+
+/*Media query*/
+@media only screen and (max-width: 769px) {
+  .tab_container {
+    width: 100%;
+  }
+}
+
+/*Content Animation*/
+@keyframes fadeInScale {
+  0% {
+      transform: scale(0.9);
+      opacity: 0;
+  }
+
+  100% {
+      transform: scale(1);
+      opacity: 1;
+  }
+}
+
+.tab_container .no_wrap {
+  text-align: center;
+  color: #0ce;
+}
+.tab_container .link {
+  text-align: center;
+}
+
+input[type=text] {
+    background-color: rgba(0,0,0,0.3);
+    color: #d4d4d4;
+}
+input[type=password] {
+    background-color: rgba(0,0,0,0.3);
+    color: #d4d4d4;
+}

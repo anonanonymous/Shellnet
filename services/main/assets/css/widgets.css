@@ -1,0 +1,134 @@
+/* alert message */
+.alert .inner {
+    padding: 20px;
+    background-color: #f44336;
+    color: white;
+}
+
+.alert .close {
+    float: right;
+    margin: 20px 10px;
+    cursor: pointer;
+}
+
+.alert .inner,.alert .close {
+    color: rgb(88,88,88);
+}
+
+.alert input {
+    display: none;
+}
+
+.alert input:checked ~ * {
+    animation-name: hide;
+    animation-fill-mode: forwards;
+}
+
+.alert.error .inner {
+    border: 1px solid rgb(238,211,215);
+    word-wrap: break-word;
+    background-color: rgb(242,222,222);
+}
+
+.alert.error .inner,.alert.error .close {
+    color: rgb(185,74,72);
+}
+
+.alert.success .inner {
+    border: 1px solid rgb(214,233,198);
+    word-wrap: break-word;
+    background-color: rgb(223,240,216);
+}
+
+.alert.success .inner,.alert.success .close {
+    color: rgb(70,136,71);
+}
+
+.alert label {
+    width: auto;
+    padding: 0;
+}
+
+.alert.error label {
+    background-color: rgb(242,222,222);
+}
+
+.alert.success label {
+    background-color: rgb(223,240,216);
+}
+
+@keyframes hide {
+    100% {
+        height: 0px;
+        width: 0px;
+        overflow: hidden;
+        margin: 0px;
+        padding: 0px;
+        border: 0px;
+    }
+}
+
+/* modal */
+.checkbox-modal {
+    /*  HIDE THE CHECKBOX */
+    /* INITIALIZE THE LABEL */
+    /* INITIALIZE THE MODAL - DEFAULT HIDDEN */
+    /* TRANSITION */
+}
+.checkbox-modal > input[type="checkbox"] {
+    position: absolute;
+    clip: rect(0, 0, 0, 0);
+    /* SHOW THE CONTENT ON CHECK */
+}
+.checkbox-modal > input[type="checkbox"]:checked ~ .modal-content {
+    margin-top: 0;
+    opacity: 1;
+    visibility: visible;
+}
+.checkbox-modal > input[type="checkbox"]:checked ~ .screen-close {
+    display: block;
+}
+.checkbox-modal > label {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    color: #d4d4d4;
+}
+.checkbox-modal a {
+    color: #d4d4d4;
+}
+.checkbox-modal > label.screen-close {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: none;
+    z-index: 1;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: default;
+}
+.checkbox-modal .modal-content {
+    position: fixed;
+    bottom: 40%;
+    left: 11%;
+    display: block;
+    padding: 15px 15px;
+    width: 72vw;
+    opacity: 0;
+    visibility: hidden;
+    word-break: break-all;
+    z-index: 5;
+    background-color: #4c4c4c;
+    /* MAKE CLOSE BUTTON CLICKABLE */
+}
+.checkbox-modal .modal-content label {
+    display: block;
+    margin-top: 1em;
+    text-align: right;
+    color: red;
+    cursor: pointer;
+}
+.checkbox-modal .modal-content {
+    transition: .25s all ease;
+}

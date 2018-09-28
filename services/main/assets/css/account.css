@@ -1,0 +1,167 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    height: 100%;
+    align-items: center;
+    background: url('/assets/images/mountains.svg');
+    background-size: cover;
+    background-position-y: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-attachment: fixed;
+}
+
+.title {
+    font-family: monospace;
+    width: 100%;
+    padding: 8px;
+    font-size: 26px;
+    color: #FEFEFE;
+    background-color: rgba(0,0,0,0.85);
+    box-sizing: border-box;
+}
+.title code {
+    font-size: larger;
+}
+.footer {
+    background-color: rgba(0,0,0,0.85);
+    color: #EEE;
+    padding: 6px;
+    box-sizing: border-box;
+    font-family: monospace;
+}
+.fa {
+  	color: #d4d4d4;
+}
+.table-container, .container.tx {
+    margin: 10px 0;
+    background-color: #4c4c4c;
+    border-radius: 3px;
+    box-shadow: 0 3px 12px 1px rgba(0, 0, 0, 0.3);
+    color: #d4d4d4;
+    padding: 1rem 1.5rem;
+    width: 90%;
+}
+@media only screen and (min-width: 801px) {
+    .table-container {
+        width: 70%;
+    }
+}
+
+#wallet_status {
+    float: right;
+}
+
+#delete_button {
+    position: relative;
+    float: right;
+}
+
+.table-container table,
+.table-container th,
+.table-container td {
+    word-break: break-word;
+    border-collapse: collapse;
+}
+
+.table-container th {
+    width: 35%;
+}
+
+.table-container th,
+.table-container td {
+    padding: 8px 0px;
+    text-align: left;
+}
+
+/* form correction */
+.input-field span:before {
+    top: 2rem;
+}
+
+input[type=text] {
+    background-color: #323232;
+    color: #d4d4d4;
+    margin: 0 auto;
+}
+input[type=password] {
+    background-color: #323232;
+    color: #d4d4d4;
+    margin: 0 auto;
+}
+
+.button-green {
+    margin-top: 16px;
+    color: #FEFEFE !important;
+    background-color: #04A148;
+}
+.button-green:hover {
+    background-color: #04AE4D;
+}
+/* trasaction history */
+
+table.tx {
+    width: 100%;
+    min-width: 300px;
+    margin-bottom: 2.4rem;
+    background-color: #4c4c4c;
+    color: #d4d4d4;
+    overflow: hidden;
+}
+
+table.tx tr:nth-child(even) {
+    background-color: black;
+}
+
+table.tx th,
+table.tx td:before {
+    color: #28b1de;
+}
+
+table.tx th {
+    display: none;
+}
+
+table.tx th,
+table.tx td {
+    margin: .5rem 2rem;
+    text-align: left;
+}
+
+table.tx td {
+    word-break: break-all;
+    display: block;
+    font-size: 90%;
+}
+
+table.tx td:first-child {
+    padding-top: 1rem;
+    word-break: keep-all;
+}
+
+table.tx td:last-child {
+    min-width: 120px;
+    word-break: normal;
+    padding-bottom: 1rem;
+}
+
+@media (min-width: 900px) {
+    table.tx td:before {
+        display: none;
+    }
+    table.tx th,
+    table.tx td {
+        display: table-cell;
+    }
+    table.tx th,
+    table.tx td,
+    table.tx td:first-child,
+    table.tx td:last-child {
+        padding: 1.5rem 1rem;
+    }
+}
