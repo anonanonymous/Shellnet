@@ -1,35 +1,41 @@
 # Shellnet
 
 ## Setup on Ubuntu 16.04
-Install the required packages. 
+Install the required packages.  
+`sudo apt install git postgresql postgresql-contrib redis-server`  
+[Install golang-1.10](https://gist.github.com/ndaidong/4c0e9fbae8d3729510b1c04eb42d2a80)
 
-`sudo apt install golang-1.9 git postgresql postgresql-contrib redis-server`
-If the `go` command isn't available after installing golang, add the following to the end of your `~/.profile` and then `source . ~/.profile`
-```
-export GOPATH=$HOME/go
-export GOROOT=/usr/lib/go-1.9
-export PATH=$PATH:$GOROOT/bin
-```
 Install the necessary go libraries
 ```
 go get github.com/gomodule/redigo/redis \
 	github.com/julienschmidt/httprouter \
 	github.com/lib/pq \
-	github.com/microcosm-cc/bluemonday \
 	github.com/opencoff/go-srp
 ```
 
 #### Postgres Setup
-Start the postgresql service
-`sudo service postgresql start`
+[Configure postgres user](https://www.linode.com/docs/databases/postgresql/how-to-install-postgresql-on-ubuntu-16-04/)  
+Setup user database  
+`~$ cat user_db.sql | psql -U <username> -h <host>`  
+Setup transactions database  
+`~$ cat transaction_db.sql | psql -U <username> -h <host>`
 
-Temporarily switch to the postgres user and change the password of the `postgres` user
-```
-sudo su - postgres
-postgres@hostname:~/ psql
-postgres=# \password <your password>
-```
-To be continued...
+#### Setup Turtlecoin service
+`~$ ./turtle-service --container-file arg -p password -g`  
+`~$ ./turtle-service --rpc-password password --container-file arg -p password -d`
+
+#### Start redis-server
+
+#### Configure and start run scripts
+Edit
+* services/main/run.sh  
+* services/wallet/run.sh  
+* services/user/run.sh  
+
+`~$ cd services/main ; ./run.sh & disown`  
+`~$ cd services/wallet ; ./run.sh & disown`  
+`~$ cd services/user ; ./run.sh & disown`  
+
 ## Todo
 * Finish walletd integration
 * Make Front-end pretty
