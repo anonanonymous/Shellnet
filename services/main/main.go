@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -248,7 +249,7 @@ func signupHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 	} else if password != verifyPassword {
 		message = "Passwords do not match"
 	} else if response := tryAuth(username, password, "signup"); response.Status != "OK" {
-		message = response.Status
+		message = "Could not create account. Try again"
 	}
 
 	if message != "" {
@@ -293,7 +294,7 @@ func sendHandler(res http.ResponseWriter, req *http.Request, p httprouter.Params
 		url.Values{
 			"amount":      {req.FormValue("amount")},
 			"address":     {usr.Address},
-			"destination": {req.FormValue("destination")},
+			"destination": {strings.TrimSpace(req.FormValue("destination"))},
 			"payment_id":  {req.FormValue("payment_id")},
 		})
 	if err != nil {

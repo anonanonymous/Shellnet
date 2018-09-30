@@ -68,9 +68,9 @@
 <div class="table-container">
     <form action={{ printf "%s%s" .PageAttr.URI "/account/send_transaction"}} method="POST">
       <div class="input-field grey-input">
-        <h2>Send Transaction</h2><small>fee: 250.1 TRTL</small><br>
+        <h2>Send Transaction</h2><small>fee: 99.1 TRTL</small><br>
         <span class="caret-icon"></span>
-        <input id="send_to" type="text" name="destination" placeholder="Enter destination address..." pattern="^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})$" required/>
+        <input id="send_to" type="text" name="destination" placeholder="Enter destination address..." pattern="^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})\s*$" required/>
         <span class="amount-icon"></span>
         <input id="send_amount" type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.{0,1}\d{0,2}$" required/>
         <span class="paymentid-icon"></span>
@@ -101,7 +101,7 @@
 </div>
 
 <div class="container tx">
-  <h1>Latest Transactions</h1>
+  <h2>Latest Transactions</h2>
   <div class="tx">
     <table class="tx">
       <tbody>
