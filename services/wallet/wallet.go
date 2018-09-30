@@ -169,7 +169,7 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 		[]string{address},
 		[]map[string]interface{}{
 			{
-				"amount":  amount,
+				"amount":  int64(amount),
 				"address": dest,
 			},
 		},
