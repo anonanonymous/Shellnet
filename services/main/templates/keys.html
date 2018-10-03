@@ -40,6 +40,14 @@
         </tr>
       </tbody>
     </table>
+    <div class="qr-keys">
+      <div class="card-img">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?data={%22privateSpendKey%22:%22{{ index .Keys "spendSecretKey" }}%22,%22privateViewKey%22:%22{{ index .Keys "viewKey" }}%22,%22publicSpendKey%22:%22{{ index .Keys "spendPublicKey" }}%22}&amp;size=200x200">
+      </div>
+      <div class="card-footer">
+         <h4>QR Keys (DO NOT SHARE)</h4>
+      </div>
+    </div>
     <article class="container">
       <h2 class="center-text">How to use your Keys</h2>
       <h3>Import your wallet in zedwallet</h3>

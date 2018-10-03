@@ -62,10 +62,16 @@ body {
     float: right;
 }
 
+.qr-keys {
+    width: fit-content;
+    width: -moz-fit-content;
+    margin: 0 auto;
+}
+
 .table-container table,
 .table-container th,
 .table-container td {
-    word-break: break-word;
+    word-break: break-all;
     border-collapse: collapse;
 }
 
