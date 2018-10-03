@@ -64,6 +64,7 @@ body {
 
 .qr-keys {
     width: fit-content;
+    width: -moz-fit-content;
     margin: 0 auto;
 }
 
