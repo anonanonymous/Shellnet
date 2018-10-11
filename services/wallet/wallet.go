@@ -193,7 +193,8 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 func getTransactions(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	encoder := json.NewEncoder(res)
 	rows, err := walletDB.Query(`SELECT dest, hash, amount, pID, id FROM transactions
-								 WHERE addr_id = (SELECT id FROM addresses WHERE address = $1) AND id > $2 ORDER BY id DESC LIMIT 15;`,
+								 WHERE addr_id = (SELECT id FROM addresses WHERE address = $1) AND id < $2
+								 ORDER BY id DESC LIMIT 15;`,
 		p.ByName("address"), p.ByName("n"))
 
 	if err != nil {

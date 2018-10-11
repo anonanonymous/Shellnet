@@ -1,0 +1,34 @@
+{{ template "header" }}
+<div class="title center-text">
+    <span>SHELLNET</span>
+</div>
+
+<div class="container tx">
+  <a class="fa" href="/logout">logout</a>&nbsp;
+  <a class="fa" href="/account">account</a>
+  <hr>
+  <h2>All Transactions</h2>
+  <div class="tx">
+    <table class="tx">
+      <tbody>
+        {{ range $idx, $ele := (index .Transactions "transactions") }}
+        <tr>
+          {{ if (index $ele "Destination") }}
+          <td><b>Withdrawal</b><br></td>
+          <td><b>Recipient</b><br>{{ index $ele "Destination" }}<br><b>Hash</b><br>{{ index $ele "Hash" }}<br><b>PaymentId</b><br>"{{ index $ele "PaymentID"}}"</td>
+          <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
+          {{ else }}
+          <td><strong>Deposit</strong></td>
+          <td><b>Hash</b><br>{{ index $ele "Hash" }}<br><b>PaymentId</b><br>"{{ index $ele "PaymentID"}}"</td>
+          <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
+          {{ end }}
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+  <a class="btn button-green" href="{{ printf "%s%s" "/account/transactions/" .Next }}">next</a>
+</div>
+
+<input style="bottom: 100%; position: absolute;" id="temp_input" readonly></input>
+{{ template "footer" }}
