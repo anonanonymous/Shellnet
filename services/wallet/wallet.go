@@ -174,7 +174,7 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 				"address": dest,
 			},
 		},
-		10,
+		1000,
 		0, // unlock time
 		3, // mixin
 		extra,
