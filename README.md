@@ -54,6 +54,7 @@ DB_PWD=<postgres password> \
 HOST_URI='http://localhost' \
 HOST_PORT=':8082' \
 RPC_PWD=<turtle-service RPC password>  \
+RPC_PORT=':8070' \
 go run wallet.go utils.go
 ```
 * services/user/run.sh  
