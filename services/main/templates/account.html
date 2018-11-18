@@ -1,6 +1,6 @@
 {{ template "header" }}
-<div class="title center-text">
-    <span>SHELLNET</span>
+<div class="account-header">
+    <img src="/assets/images/brand-logo.png" class="account-header-logo"/>
 </div>
 <div class="table-container">
   <div class="checkbox-modal">
@@ -19,7 +19,7 @@
         <button class="btn btn-primary button-green">Confirm</button>
       </form>
     </div>
- 
+
     <div class="checkbox-modal" id="delete_button">
       <input type="checkbox" id="delete" required>
       <label for="delete">delete account</label>
@@ -47,11 +47,11 @@
       </tr>
       <tr>
         <th>Available</th>
-        <td><span id="available_balance">{{ printf "%.2f" (index .Wallet "balance" "availableBalance") }}</span> TRTL</td>
+        <td><span id="available_balance">{{ printf "%.2f" (index .Wallet "balance" "availableBalance") }}</span> XCY</td>
       </tr>
       <tr>
         <th>Locked / Unconfirmed</th>
-        <td><span id="locked_amount">{{ printf "%.2f" (index .Wallet "balance" "lockedAmount") }}</span> TRTL</td>
+        <td><span id="locked_amount">{{ printf "%.2f" (index .Wallet "balance" "lockedAmount") }}</span> XCY</td>
       </tr>
       <tr>
         <th>Address</th>
@@ -68,9 +68,9 @@
 <div class="table-container">
     <form action={{ printf "%s%s" .PageAttr.URI "/account/send_transaction"}} method="POST">
       <div class="input-field grey-input">
-        <h2>Send Transaction</h2><small>fee: 99.1 TRTL</small><br>
+        <h2>Send Transaction</h2><small>fee: 0.001 XCY</small><br>
         <span class="caret-icon"></span>
-        <input id="send_to" type="text" name="destination" placeholder="Enter destination address..." pattern="^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})\s*$" required/>
+        <input id="send_to" type="text" name="destination" placeholder="Enter destination address..." pattern="^XCY([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})\s*$" required/>
         <span class="amount-icon"></span>
         <input id="send_amount" type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.{0,1}\d{0,2}$" required/>
         <span class="paymentid-icon"></span>
@@ -110,11 +110,11 @@
           {{ if (index $ele "Destination") }}
           <td><b>Withdrawal</b><br></td>
           <td><b>Recipient</b><br>{{ index $ele "Destination" }}<br><b>Hash</b><br>{{ index $ele "Hash" }}<br><b>PaymentId</b><br>"{{ index $ele "PaymentID"}}"</td>
-          <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
+          <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;XCY</td>
           {{ else }}
           <td><strong>Deposit</strong></td>
           <td><b>Hash</b><br>{{ index $ele "Hash" }}<br><b>PaymentId</b><br>"{{ index $ele "PaymentID"}}"</td>
-          <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
+          <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;XCY</td>
           {{ end }}
         </tr>
         {{ end }}

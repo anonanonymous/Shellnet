@@ -7,7 +7,7 @@ body {
 body {
     height: 100%;
     align-items: center;
-    background: url('/assets/images/mountains.svg');
+    background: url('/assets/images/pink-clouds.jpeg');
     background-size: cover;
     background-position-y: center;
     display: flex;
@@ -170,4 +170,20 @@ table.tx td:last-child {
     table.tx td:last-child {
         padding: 1.5rem 1rem;
     }
+}
+.account-header {
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: row;
+    flex-shrink: 0;
+    flex-grow: 0;
+    box-sizing: border-box;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+}
+.account-header-logo {
+    height: 40px;
+    width: auto;
 }
