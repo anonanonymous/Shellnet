@@ -26,7 +26,7 @@ var (
 
 // Forking config.
 var addressFormat = "^XCY([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})$"
-var divisor = 1000000 // This is 100 for TRTL
+var float64 divisor = 1000000 // This is 100 for TRTL
 var transactionFee = 1000 // This is 10 for TRTL
 
 func init() {
