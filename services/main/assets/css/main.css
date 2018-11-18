@@ -13,8 +13,7 @@ body {
 .full-container {
   display: flex;
   flex-direction: column;
-  /*background: url('../images/pink-clouds.jpeg');*/
-  background: url('/assets/images/pink-clouds.jpeg');
+  background: url('/assets/images/background.jpeg');
   background-size: cover;
   background-position-y: center;
   height: 100%;

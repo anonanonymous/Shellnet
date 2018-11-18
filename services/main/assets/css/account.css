@@ -7,7 +7,7 @@ body {
 body {
     height: 100%;
     align-items: center;
-    background: url('/assets/images/pink-clouds.jpeg');
+    background: url('/assets/images/background.jpeg');
     background-size: cover;
     background-position-y: center;
     display: flex;
@@ -40,7 +40,7 @@ body {
 }
 .table-container, .container.tx {
     margin: 10px 0;
-    background-color: #4c4c4c;
+    background-color: rgba(0,0,0,0.8);
     border-radius: 3px;
     box-shadow: 0 3px 12px 1px rgba(0, 0, 0, 0.3);
     color: #d4d4d4;
@@ -48,7 +48,7 @@ body {
     width: 90%;
 }
 @media only screen and (min-width: 801px) {
-    .table-container {
+    .table-container, .container.tx {
         width: 70%;
     }
 }
@@ -171,8 +171,8 @@ table.tx td:last-child {
         padding: 1.5rem 1rem;
     }
 }
-.account-header {
-    background: rgba(0,0,0,0.6);
+.brand-header {
+    background: rgba(0,0,0,0.8);
     display: flex;
     flex-direction: row;
     flex-shrink: 0;
@@ -183,7 +183,16 @@ table.tx td:last-child {
     align-items: center;
     padding: 8px;
 }
-.account-header-logo {
-    height: 40px;
+.brand-header-logo {
+    height: 36px;
     width: auto;
+}
+.link-logout {
+    padding-right: 8px;
+}
+.link-logout:hover {
+    color: #F7F7F7;
+}
+.link-logout:active {
+
 }

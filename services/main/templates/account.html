@@ -1,10 +1,10 @@
 {{ template "header" }}
-<div class="account-header">
-    <img src="/assets/images/brand-logo.png" class="account-header-logo"/>
+<div class="brand-header">
+    <img src="/assets/images/brand-logo.png" class="brand-header-logo"/>
 </div>
 <div class="table-container">
   <div class="checkbox-modal">
-    <a href="/logout">logout</a>
+    <a href="/logout" class="link-logout">logout</a>
     <!--<a href="/account/delete" id="delete_button">delete account</a>-->
     <input type="checkbox" id="export_keys" required>
     <label for="export_keys">export keys</label>
@@ -47,11 +47,11 @@
       </tr>
       <tr>
         <th>Available</th>
-        <td><span id="available_balance">{{ printf "%.6f" (index .Wallet "balance" "availableBalance") }}</span> XCY</td>
+        <td><span id="available_balance">{{ printf "%.6f" (index .Wallet "balance" "availableBalance") }} XCY</span></td>
       </tr>
       <tr>
         <th>Locked / Unconfirmed</th>
-        <td><span id="locked_amount">{{ printf "%.6f" (index .Wallet "balance" "lockedAmount") }}</span> XCY</td>
+        <td><span id="locked_amount">{{ printf "%.6f" (index .Wallet "balance" "lockedAmount") }} XCY</span></td>
       </tr>
       <tr>
         <th>Address</th>

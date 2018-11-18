@@ -1,7 +1,14 @@
-function setWalletStatus() {
+// Forking config.
+const tickerSymbol = 'XCY';
+const decimalPlaces = 6;
+
+// Wallet update interval in milliseconds. Probably don't need to change this.
+const updateInterval = 5000;
+
+function setWalletStatus () {
     let wallet_info = httpGet("/account/wallet_info");
-    let availableBalance = parseFloat(wallet_info.Data.balance.availableBalance);
-    let lockedAmount = parseFloat(wallet_info.Data.balance.lockedAmount);
+    let availableBalance = parseFloat(wallet_info.Data.balance.availableBalance).toFixed(decimalPlaces);
+    let lockedAmount = parseFloat(wallet_info.Data.balance.lockedAmount).toFixed(decimalPlaces);
     let knownBlockCount = wallet_info.Data.status.knownBlockCount;
     let blockCount = wallet_info.Data.status.blockCount;
 
@@ -10,17 +17,20 @@ function setWalletStatus() {
     } else {
       document.getElementById("wallet_status").className = "orange-input";
     }
-    document.getElementById("available_balance").textContent = availableBalance.toFixed(6);
-    document.getElementById("locked_amount").textContent = lockedAmount.toFixed(6);
+
+    document.getElementById("available_balance").textContent = `${availableBalance} ${tickerSymbol}`;
+    document.getElementById("locked_amount").textContent = `${lockedAmount} ${tickerSymbol}`;
     document.getElementById("block_count").textContent = blockCount + "/" + knownBlockCount;
     console.log("checking wallet...");
   }
 
-function confirmation() {
+function confirmation () {
     let dest = document.getElementById("send_to").value;
     let amount = document.getElementById("send_amount").value;
     let conf_msg = document.getElementById("send_confirmation");
-    conf_msg.textContent = "You are sending "+amount+" XCY to: "+ document.getElementById("send_to").value;
+    let sendTo = document.getElementById("send_to").value;
+    conf_msg.textContent = `You are sending ${amount} ${tickerSymbol} to: ${sendTo}`;
+    //conf_msg.textContent = "You are sending "+amount+" XCY to: "+ document.getElementById("send_to").value;
 }
 
-window.setInterval(setWalletStatus, 5000);
+window.setInterval(setWalletStatus, updateInterval);
