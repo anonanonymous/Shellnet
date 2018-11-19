@@ -1,5 +1,7 @@
 # Shellnet
 
+![screenshot](/docs/screenshot-shellnet-login.png)
+
 ## Setup on Ubuntu 16.04+
 Install the required packages.  
 `sudo apt install git postgresql postgresql-contrib redis-server`  
