@@ -7,7 +7,7 @@ body {
 body {
     height: 100%;
     align-items: center;
-    background: url('/assets/images/background.jpeg');
+    background: url('../images/background.svg'); /* Designed by Freepik */
     background-size: cover;
     background-position-y: center;
     display: flex;

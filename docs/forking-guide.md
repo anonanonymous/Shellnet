@@ -2,6 +2,8 @@
 
 Forking should be easy for most recent TurtleCoin forks that work with turtle-service.
 
+You DO NOT need to change any references to `turtle-service`.  Since `turtle-service` is using RPC, Shellnet doesn't care what what your forked service is called.
+
 ### Coin Settings
 services/wallet/wallet.go
 ```go
@@ -16,11 +18,62 @@ const tickerSymbol = 'TRTL';
 const decimalPlaces = 2;
 ```
 
-In case I forgot anything, I put a comment `// Forking config` anywhere else I made changes.
+In case I forgot anything, I put a `// Forking config` comment anywhere else I made changes.
 
 ### Branding
 
 Replace services/main/assets/images/brand-logo.png with your own logo.
 Replace services/main/assets/images/background.jpeg with your own website background.
+
+There are a few places you may need to make frontend changes for now  Here are some of them, just do a search for `TRTL` or `Turtle` to find any I missed.
+
+services/main/templates/index.html
+```html
+<span class="tagline">A secure, easy-to-use wallet for TurtleCoin payments</span>
+```
+
+services/main/templates/account.html
+```html
+<!-- This one isn't as important because JS replaces it on first wallet update -->
+<tr>
+  <th>Name</th>
+  <td>{{ .User.Username }}</td>
+</tr>
+<tr>
+  <th>Available</th>
+  <td><span id="available_balance">{{ printf "%.2f" (index .Wallet "balance" "availableBalance") }} TRTL</span></td>
+</tr>
+<tr>
+  <th>Locked / Unconfirmed</th>
+  <td><span id="locked_amount">{{ printf "%.2f" (index .Wallet "balance" "lockedAmount") }} TRTL</span></td>
+</tr>
+...
+```
+```html
+<div class="table-container">
+    <form action={{ printf "%s%s" .PageAttr.URI "/account/send_transaction"}} method="POST">
+        <div class="input-field grey-input">
+            <h2>Send Transaction</h2><small>fee: 0.1 TRTL</small><br>
+            <span class="caret-icon"></span>
+            <input id="send_to" type="text" name="destination" placeholder="Enter destination address..." pattern="^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})\s*$" required/>
+            <span class="amount-icon"></span>
+            <input id="send_amount" type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.{0,1}\d{0,6}$" required/>
+            <span class="paymentid-icon"></span>
+            <input type="text" name="payment_id" placeholder="Enter Payment ID..." pattern="^[a-fA-F\d]{64}$"/>
+        </div>
+...
+```
+```html
+<div class="container tx">
+ ...
+<td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
+{{ else }}
+<td><strong>Deposit</strong></td>
+<td><b>Hash</b><br>{{ index $ele "Hash" }}<br><b>PaymentId</b><br>"{{ index $ele "PaymentID"}}"</td>
+<td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
+{{ end }}
+...
+</div>
+```
 
 The rest is CSS.

@@ -1,6 +1,6 @@
 // Forking config.
-const tickerSymbol = 'XCY';
-const decimalPlaces = 6;
+const tickerSymbol = 'TRTL';
+const decimalPlaces = 2;
 
 // Wallet update interval in milliseconds. Probably don't need to change this.
 const updateInterval = 5000;
@@ -30,7 +30,6 @@ function confirmation () {
     let conf_msg = document.getElementById("send_confirmation");
     let sendTo = document.getElementById("send_to").value;
     conf_msg.textContent = `You are sending ${amount} ${tickerSymbol} to: ${sendTo}`;
-    //conf_msg.textContent = "You are sending "+amount+" XCY to: "+ document.getElementById("send_to").value;
 }
 
 window.setInterval(setWalletStatus, updateInterval);
