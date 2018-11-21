@@ -37,7 +37,8 @@ func init() {
 		hostPort = ":8080"
 		println("Using default HOST_PORT - 8080")
 	}
-	hostURI += hostPort
+    // Removed this in favor of local nginx routing to 8080.
+	//hostURI += hostPort
 
 	if usrURI = os.Getenv("USER_URI"); usrURI == "" {
 		panic("Set the USER_URI env variable")
