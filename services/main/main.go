@@ -257,7 +257,7 @@ func signupHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 		InternalServerError(res, req, authMessage(res, message, "signup", "error"))
 	} else {
 		message = "Account Created, Please Log In"
-        http.Redirect(res, req, hostRoot, http.StatusSeeOther)
+        http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		//InternalServerError(res, req, authMessage(res, message, "login", "success"))
 	}
 }
