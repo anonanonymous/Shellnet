@@ -5,14 +5,14 @@ Forking should be easy for most recent TurtleCoin forks that work with turtle-se
 You DO NOT need to change any references to `turtle-service`.  Since `turtle-service` is using RPC, Shellnet doesn't care what what your forked service is called.
 
 ### Coin Settings
-In *services/wallet/wallet.go*
+*services/wallet/wallet.go*
 ```go
 var addressFormat = "^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})$"
 var divisor float64 = 100
 var transactionFee = 10
 ```
 
-In *services/main/assets/js/account.js*
+*services/main/assets/js/account.js*
 ```js
 const tickerSymbol = 'TRTL';
 const decimalPlaces = 2;
