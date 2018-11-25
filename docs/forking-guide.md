@@ -18,8 +18,37 @@ const tickerSymbol = 'TRTL';
 const decimalPlaces = 2;
 ```
 
-In both database scripts in project root you may need to change address length to match yours.  
-`address char(99)`
+In both database scripts you may need to change address length to match yours.  
+*transaction_db.sql*
+```sql
+-- setup transaction database
+CREATE DATABASE tx_history;
+\c tx_history;
+
+CREATE TABLE addresses (
+ID serial NOT NULL PRIMARY KEY,
+address char(99) not null unique); /* Change to your required address length */
+
+CREATE TABLE transactions (
+ID serial NOT NULL PRIMARY KEY,
+addr_id serial references addresses(id),
+DEST char(99), /* Change to your required address length */
+AMOUNT numeric(15,2) NOT NULL,
+hash char(64) NOT NULL,
+paymentID char(64) not null);```
+
+*user_db.sql*
+```sql
+-- setup user database
+CREATE database users;
+\c users;
+CREATE TABLE accounts (
+IH char(64) NOT NULL,
+Verifier char(585) NOT NULL,
+Username varchar(64) NOT NULL UNIQUE,
+ID  SERIAL PRIMARY KEY,
+address char(99) NOT NULL); /* Change to your required address length */
+```
 
 ### Branding
 
@@ -28,12 +57,12 @@ Replace *services/main/assets/images/background.svg* with your own website backg
 
 There are a few places you may need to make frontend changes for now  Here are some of them, just do a search for `TRTL` or `Turtle` to find any I missed.
 
-In *services/main/templates/index.html*
+*services/main/templates/index.html*
 ```html
 <span class="tagline">A secure, easy-to-use wallet for TurtleCoin payments</span>
 ```
 
-In *services/main/templates/account.html*
+*services/main/templates/account.html*
 In `printf "%.2f"`, 2f is the number of decimal places to display. To show 4 decimal places, you'd use `printf "%.4f"`.  JS replaces the content of both spans on first wallet update.  
 ```html
 <tr>
