@@ -19,6 +19,7 @@ const decimalPlaces = 2;
 ```
 
 In both database scripts you may need to change address length to match yours.  
+
 *transaction_db.sql*
 ```sql
 -- setup transaction database
@@ -35,7 +36,8 @@ addr_id serial references addresses(id),
 DEST char(99), /* Change to your required address length */
 AMOUNT numeric(15,2) NOT NULL,
 hash char(64) NOT NULL,
-paymentID char(64) not null);```
+paymentID char(64) not null);
+```
 
 *user_db.sql*
 ```sql
