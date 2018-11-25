@@ -37,7 +37,8 @@ func init() {
 		hostPort = ":8080"
 		println("Using default HOST_PORT - 8080")
 	}
-    // Removed this in favor of local nginx routing to 8080.
+        // Removed this in favor of local nginx routing to 8080. 
+	// To keep routing to specific port, include port in run.sh HOST_URI.
 	//hostURI += hostPort
 
 	if usrURI = os.Getenv("USER_URI"); usrURI == "" {
