@@ -73,6 +73,7 @@ func alreadyLoggedIn(res http.ResponseWriter, req *http.Request) bool {
 // wrapper for redis HMSET for auth
 func sessionSetKeys(key, uname, addr string) error {
 	conn := sessionDB.Get()
+	defer conn.Close()
 	_, err := conn.Do(
 		"HMSET", key,
 		"username", uname,
@@ -88,6 +89,7 @@ func sessionGetKeys(req *http.Request, name string) *userInfo {
 		return nil
 	}
 	conn := sessionDB.Get()
+	defer conn.Close()
 	reply, err := redis.Strings(conn.Do("HMGET", cookie.Value, "username", "address"))
 	if err != nil || len(reply) != 2 || reply[0] == "" {
 		return nil
@@ -102,6 +104,7 @@ func sessionGetKeys(req *http.Request, name string) *userInfo {
 // sessionDelKey - wrapper for redis DEL KEY - used for logout
 func sessionDelKey(key string) error {
 	conn := sessionDB.Get()
+	defer conn.Close()
 	_, err := conn.Do("DEL", key)
 
 	return err
