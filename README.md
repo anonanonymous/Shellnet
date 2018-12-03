@@ -32,9 +32,10 @@ Run this once.
 `~$ ./turtle-service --container-file <container name> -p <password> -g`  
 
 Start turtle-service
-`~$ ./turtle-service --rpc-password <password> --container-file <container name> -p <password> -d`
+`~$ ./turtle-service --rpc-password <password> --container-file <container name> -p <container password> -d`
+
 Point turtle-service at an existing daemon like this
-`~$ ./turtle-service --rpc-password <password> --container-file <container name> -p <password> -d --daemon-address <daemon DNS or IP address> --daemon-port <daemon port>`
+`~$ ./turtle-service --rpc-password <rpc password> --container-file <container name> -p <container password> -d --daemon-address <daemon DNS or IP address> --daemon-port <daemon port>`
 
 #### Start redis-server
 
