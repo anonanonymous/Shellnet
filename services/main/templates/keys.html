@@ -5,65 +5,71 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <script src="/assets/js/utils.js" async></script>
         <link rel="icon" href="/assets/images/fav_icon.ico" type="image/x-icon">
-        <link rel="stylesheet prefetch" href="https://unpkg.com/unnamed"/>
+        <link rel="stylesheet" href="https://unpkg.com/unnamed"/>
         <link rel="stylesheet prefetch" href="/assets/css/account.css"/>
         <link rel="icon" href="assets/images/fav_icon.ico" type="image/x-icon">
         <title>Shellnet</title>
     </head>
     <body>
-<div class="title center-text"><span>SHELLNET</span></div>
+        <div class="brand-header">
+            <img src="/assets/images/brand-logo.png" class="brand-header-logo"/>
+        </div>
 
-<div class="table-container">
-  <a href="/logout">logout</a>&nbsp;
-  <a href="/account">account</a>
-  <hr>
-    <h1>Wallet Keys</h1>
-    <table>
-      <tbody>
-        <tr>
-          <th>Name</th>
-          <td>{{ .User.Username }}</td>
-        </tr>
-        <tr>
-          <th>Private Spend Key</th>
-          <td><span>{{ index .Keys "spendSecretKey" }}</span></td>
-        </tr>
-        <tr>
-          <th>Private View Key</th>
-          <td><span>{{ index .Keys "viewKey" }}</span></td>
-        </tr>
-        <tr>
-          <th>Public Spend Key</th>
-          <td>
-            <span>{{ index .Keys "spendPublicKey" }}</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <div class="qr-keys">
-      <div class="card-img">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?data={%22privateSpendKey%22:%22{{ index .Keys "spendSecretKey" }}%22,%22privateViewKey%22:%22{{ index .Keys "viewKey" }}%22,%22publicSpendKey%22:%22{{ index .Keys "spendPublicKey" }}%22}&amp;size=200x200">
-      </div>
-      <div class="card-footer">
-         <h4>QR Keys (DO NOT SHARE)</h4>
-      </div>
-    </div>
-    <article class="container">
-      <h2 class="center-text">How to use your Keys</h2>
-      <h3>Import your wallet in zedwallet</h3>
-      <ol>
-        <li> In the running zedwallet client, <b>type I</b>.</li>
-        <br>
-        <li>Copy and paste your private spend and view key (Shown above).</li>
-        <br>
-        <li>Set a name for your new wallet.</li>
-        <br>
-        <li>Specify a strong password to encrypt your wallet with and confirm it by pressing         <b>Enter</b>.</li>
-        <br>
-        <li>Once done, press <b>Enter</b>. The wallet will then begin synchronizing with the blockchain. Once synchronization is complete, your balance will be updated.</li>
-      </ol>
-      <h3>Import your wallet in <a href="https://github.com/turtlecoin/turtle-wallet-go">Nest</a></h3>
-      <p> Refer to <a href="https://docs.turtlecoin.lol/guides/wallets/using-nest-wallet/#private-view-and-spend-keys"> THIS GUIDE</a>.</p>
-    </article>
-  </div>
+        <div class="table-container">
+            <a href="/logout">logout</a>&nbsp;
+            <a href="/account">account</a>
+            <hr>
+            <h1>Wallet Keys</h1>
+            <table>
+                <tbody>
+                    <tr>
+                        <th>Name</th>
+                        <td>{{ .User.Username }}</td>
+                    </tr>
+                    <tr>
+                        <th>Private Spend Key</th>
+                        <td>
+                            <span>{{ index .Keys "spendSecretKey" }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Private View Key</th>
+                        <td>
+                            <span>{{ index .Keys "viewKey" }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Public Spend Key</th>
+                        <td>
+                            <span>{{ index .Keys "spendPublicKey" }}</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="qr-keys">
+                <div class="card-img">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?data={%22privateSpendKey%22:%22{{ index .Keys "spendSecretKey" }}%22,%22privateViewKey%22:%22{{ index .Keys "viewKey" }}%22,%22publicSpendKey%22:%22{{ index .Keys "spendPublicKey" }}%22}&amp;size=200x200">
+                </div>
+                <div class="card-footer">
+                    <h4>QR Keys (DO NOT SHARE)</h4>
+                </div>
+            </div>
+            <article class="container">
+                <h2 class="center-text">How to use your Keys</h2>
+                <h3>Import your wallet in zedwallet</h3>
+                <ol>
+                    <li> In the running zedwallet client, <b>type I</b>.</li>
+                    <br>
+                    <li>Copy and paste your private spend and view key (Shown above).</li>
+                    <br>
+                    <li>Set a name for your new wallet.</li>
+                    <br>
+                    <li>Specify a strong password to encrypt your wallet with and confirm it by pressing         <b>Enter</b>.</li>
+                    <br>
+                    <li>Once done, press <b>Enter</b>. The wallet will then begin synchronizing with the blockchain. Once synchronization is complete, your balance will be updated.</li>
+                </ol>
+                <h3>Import your wallet in <a href="https://github.com/turtlecoin/turtle-wallet-go">Nest</a></h3>
+                <p> Refer to <a href="https://docs.turtlecoin.lol/guides/wallets/using-nest-wallet/#private-view-and-spend-keys"> THIS GUIDE</a>.</p>
+            </article>
+        </div>
 {{ template "footer" }}

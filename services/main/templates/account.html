@@ -1,10 +1,10 @@
 {{ template "header" }}
-<div class="title center-text">
-    <span>SHELLNET</span>
+<div class="brand-header">
+    <img src="/assets/images/brand-logo.png" class="brand-header-logo"/>
 </div>
 <div class="table-container">
   <div class="checkbox-modal">
-    <a href="/logout">logout</a>
+    <a href="/logout" class="link-logout">logout</a>
     <!--<a href="/account/delete" id="delete_button">delete account</a>-->
     <input type="checkbox" id="export_keys" required>
     <label for="export_keys">export keys</label>
@@ -19,7 +19,7 @@
         <button class="btn btn-primary button-green">Confirm</button>
       </form>
     </div>
- 
+
     <div class="checkbox-modal" id="delete_button">
       <input type="checkbox" id="delete" required>
       <label for="delete">delete account</label>
@@ -47,11 +47,11 @@
       </tr>
       <tr>
         <th>Available</th>
-        <td><span id="available_balance">{{ printf "%.2f" (index .Wallet "balance" "availableBalance") }}</span> TRTL</td>
+        <td><span id="available_balance">{{ printf "%.2f" (index .Wallet "balance" "availableBalance") }} TRTL</span></td>
       </tr>
       <tr>
         <th>Locked / Unconfirmed</th>
-        <td><span id="locked_amount">{{ printf "%.2f" (index .Wallet "balance" "lockedAmount") }}</span> TRTL</td>
+        <td><span id="locked_amount">{{ printf "%.2f" (index .Wallet "balance" "lockedAmount") }} TRTL</span></td>
       </tr>
       <tr>
         <th>Address</th>
@@ -68,11 +68,11 @@
 <div class="table-container">
     <form action={{ printf "%s%s" .PageAttr.URI "/account/send_transaction"}} method="POST">
       <div class="input-field grey-input">
-        <h2>Send Transaction</h2><small>fee: 99.1 TRTL</small><br>
+        <h2>Send Transaction</h2><small>fee: 0.1 TRTL</small><br>
         <span class="caret-icon"></span>
         <input id="send_to" type="text" name="destination" placeholder="Enter destination address..." pattern="^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})\s*$" required/>
         <span class="amount-icon"></span>
-        <input id="send_amount" type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.{0,1}\d{0,2}$" required/>
+        <input id="send_amount" type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.{0,1}\d{0,6}$" required/>
         <span class="paymentid-icon"></span>
         <input type="text" name="payment_id" placeholder="Enter Payment ID..." pattern="^[a-fA-F\d]{64}$"/>
       </div>

@@ -37,7 +37,9 @@ func init() {
 		hostPort = ":8080"
 		println("Using default HOST_PORT - 8080")
 	}
-	hostURI += hostPort
+        // Removed this in favor of local nginx routing to 8080. 
+	// To keep routing to specific port, include port in run.sh HOST_URI.
+	//hostURI += hostPort
 
 	if usrURI = os.Getenv("USER_URI"); usrURI == "" {
 		panic("Set the USER_URI env variable")
@@ -256,7 +258,8 @@ func signupHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 		InternalServerError(res, req, authMessage(res, message, "signup", "error"))
 	} else {
 		message = "Account Created, Please Log In"
-		InternalServerError(res, req, authMessage(res, message, "login", "success"))
+        http.Redirect(res, req, hostURI, http.StatusSeeOther)
+		//InternalServerError(res, req, authMessage(res, message, "login", "success"))
 	}
 }
 

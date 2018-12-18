@@ -24,6 +24,11 @@ var (
 	walletDB          *sql.DB
 )
 
+// Forking config.
+var addressFormat = "^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})$"
+var divisor float64 = 100 // This is 100 for TRTL
+var transactionFee = 10 // This is 10 for TRTL
+
 func init() {
 	var err error
 
@@ -124,10 +129,10 @@ func getStatus(res http.ResponseWriter, req *http.Request, p httprouter.Params) 
 		address,
 	)
 	json.NewDecoder(walletdResponse).Decode(&temp)
-	trtl := temp["result"].(map[string]interface{})["availableBalance"].(float64) / 100
+	trtl := temp["result"].(map[string]interface{})["availableBalance"].(float64) / divisor
 	temp["result"].(map[string]interface{})["availableBalance"] = trtl
 	trtl = temp["result"].(map[string]interface{})["lockedAmount"].(float64)
-	temp["result"].(map[string]interface{})["lockedAmount"] = trtl / 100
+	temp["result"].(map[string]interface{})["lockedAmount"] = trtl / divisor
 
 	response.Data["balance"] = temp["result"]
 	walletdResponse = walletd.GetStatus(
@@ -148,7 +153,7 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 	address := req.FormValue("address")
 	extra := "" // TODO - use for messages
 	response := jsonResponse{}
-	if matched, _ := regexp.MatchString("^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})$", dest); !matched {
+	if matched, _ := regexp.MatchString(addressFormat, dest); !matched {
 		json.NewEncoder(res).Encode(jsonResponse{Status: "Incorrect Address Format"})
 		return
 	}
@@ -161,7 +166,7 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 		return
 	}
 	amount, _ := strconv.ParseFloat(amountStr, 10)
-	amount *= 100
+	amount *= divisor
 	walletdResponse := walletd.SendTransaction(
 		rpcPwd,
 		"localhost",
@@ -173,7 +178,7 @@ func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Pa
 				"address": dest,
 			},
 		},
-		10,
+		transactionFee, // fee
 		0, // unlock time
 		3, // mixin
 		extra,
