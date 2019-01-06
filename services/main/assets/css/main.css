@@ -13,7 +13,7 @@ body {
 .full-container {
   display: flex;
   flex-direction: column;
-  background: url('../images/mountains.svg'); /* Designed by Freepik */
+  background: url('../images/background.svg'); /* Designed by Freepik */
   background-size: cover;
   background-position-y: center;
   height: 100%;
@@ -101,4 +101,26 @@ body {
   padding: 8px 16px 24px 16px;
   text-align: center;
   text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+}
+.landing-logo {
+    height: 40px;
+    width: auto;
+    margin-top: 16px;
+    margin-bottom: 4px;
+}
+.brand-header {
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: row;
+    flex-shrink: 0;
+    flex-grow: 0;
+    box-sizing: border-box;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+}
+.brand-header-logo {
+    height: 36px;
+    width: auto;
 }
