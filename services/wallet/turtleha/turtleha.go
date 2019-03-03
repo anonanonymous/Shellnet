@@ -1,19 +1,15 @@
 package turtleha
 
 import (
-	"bufio"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"strings"
 	"sync"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // benis
 
 	"../turtlecoin-rpc-go/walletd"
 )
@@ -49,25 +45,17 @@ func init() {
 
 // TurtleService - daemon config
 type TurtleService struct {
-	Path               string // full path the turtle-service
-	BindAddress        string // bind-address
-	ContainerFile      string // full path to container file
-	ContainerPassword  string
-	DaemonAddress      string
-	DaemonPort         string
-	LogFile            string // full path to log file
-	LogLevel           string // 0 - 4 verbosity
-	LastBlock          int64  // last block scanned from getTransactions
 	MaxPollingFailures int
 	PollingFailures    int
+	BindAddress        string
+	RPCPassword        string
+	RPCPort            int
 	PollingInterval    int // check if the daemon is alive every n seconds
 	ScanHeight         int64
+	LastBlock          int64  // last block scanned from getTransactions
 	ScanInterval       int // check for transactions every n seconds
 	SaveInterval       int // save every n seconds
-	Status             int // 1 is alive, 0 is dead
 	Timeout            int // polling timeout
-	RPCPort            int
-	RPCPassword        string
 	synced             bool
 	mux                sync.Mutex // only allow one goroutine to access a variable
 }
@@ -75,18 +63,12 @@ type TurtleService struct {
 // NewService - creates a turtleservice with the default options
 func NewService() *TurtleService {
 	service := &TurtleService{
-		Path:               cwd + "/turtle-service",
-		BindAddress:        "localhost",
-		DaemonAddress:      "turtlenode.online",
-		DaemonPort:         "11898",
-		LogFile:            cwd + "/data/turtle.log",
-		LogLevel:           "4",
-		LastBlock:          1,
 		MaxPollingFailures: 30,
 		PollingFailures:    0,
+		BindAddress:        "localhost",
 		SaveInterval:       60000,
 		ScanInterval:       5000,
-		Status:             1,
+		LastBlock:          1,
 		Timeout:            5000,
 		PollingInterval:    10000,
 		RPCPort:            8070,
@@ -96,55 +78,10 @@ func NewService() *TurtleService {
 
 // Start - starts the turtle-service
 func (service *TurtleService) Start() error {
-	cmd := exec.Command(
-		"unbuffer",
-		service.Path,
-		"--rpc-password", service.RPCPassword,
-		"--container-file", service.ContainerFile,
-		"--container-password", service.ContainerPassword,
-		"--log-file", service.LogFile,
-		"--log-level", service.LogLevel,
-		"--daemon-address", service.DaemonAddress,
-	)
-	stat := make(chan int, 1)
-	pipe, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-
-	scanner := bufio.NewScanner(pipe)
-	go func() {
-		for scanner.Scan() {
-			output := scanner.Text()
-			if strings.Contains(output, "Outdated pool transactions processed") {
-				fmt.Println("wallet started")
-				stat <- 1
-			} else if strings.Contains(output, "ERROR") {
-				fmt.Println(output)
-				if strings.Contains(output, "Synchronization error") {
-					fmt.Println("fatal error")
-					cmd.Process.Kill()
-				}
-			} else if strings.Contains(output, "New wallet added") {
-				println("new wallet")
-				go service.Save()
-			}
-		}
-	}()
-	if 1 == <-stat {
-		fmt.Println("starting monitoring routines")
-		service.loadConfig()
-		go service.pinger(cmd)
-		go service.saver(cmd)
-		go service.scanner()
-	}
-	if err := cmd.Wait(); err != nil {
-		panic(err)
-	}
-
+	service.loadConfig()
+	go service.pinger()
+	go service.saver()
+	service.scanner()
 	return nil
 }
 
@@ -165,46 +102,22 @@ func (service *TurtleService) loadConfig() {
 }
 
 // saves the wallet every save interval if the wallet is synced
-func (service *TurtleService) saver(cmd *exec.Cmd) {
-	for service.Status == 1 {
+func (service *TurtleService) saver() {
+	for ; ; time.Sleep(time.Millisecond * time.Duration(service.SaveInterval)) {
 		if service.isSynced() {
-			service.Save()
-			service.backup()
-			fmt.Println("wallet saved and backed up")
+			fmt.Println("wallet is synced")
 			service.PollingFailures = 0
 		} else {
-			fmt.Println("not saving: wallet not synced")
+			fmt.Println("not saving: blockchain not synced")
 		}
-		time.Sleep(time.Millisecond * time.Duration(service.SaveInterval))
-	}
-	fmt.Println("out saver")
-}
-
-// backs up the container file
-func (service *TurtleService) backup() {
-	src, err := os.Open(service.ContainerFile)
-	if err != nil {
-		panic(err)
-	}
-	defer src.Close()
-
-	bck, err := os.Create(service.ContainerFile + ".backup")
-	if err != nil {
-		panic(err)
-	}
-	defer bck.Close()
-	_, err = io.Copy(bck, src)
-	if err == nil {
-		fmt.Println("backup created")
 	}
 }
 
-// scans the blockschain for transactions every at scan interval
 func (service *TurtleService) scanner() {
 	fmt.Println("scanner started")
-	for service.Status == 1 {
+	for ; ; time.Sleep(time.Duration(service.ScanInterval) * time.Millisecond) {
 		result := map[string]interface{}{}
-		if service.isSynced() && service.ScanHeight < service.LastBlock {
+		if service.ScanHeight < service.LastBlock {
 			fmt.Println(service.ScanHeight, " ", service.LastBlock)
 			response := walletd.GetTransactions(
 				service.RPCPassword,
@@ -213,6 +126,7 @@ func (service *TurtleService) scanner() {
 				int(service.ScanHeight),
 				int(service.LastBlock-service.ScanHeight),
 			)
+			fmt.Println(response)
 			if err := json.NewDecoder(response).Decode(&result); err != nil {
 				panic(err)
 			}
@@ -245,15 +159,13 @@ func (service *TurtleService) scanner() {
 			}
 			service.ScanHeight = service.LastBlock
 		}
-		time.Sleep(time.Duration(service.ScanInterval) * time.Millisecond)
-
 	}
 	fmt.Println("out scanner")
 }
 
 // checks if the wallet responds to rpc calls in the timeout period
-func (service *TurtleService) pinger(cmd *exec.Cmd) {
-	for service.Status == 1 {
+func (service *TurtleService) pinger() {
+	for ; ; time.Sleep(time.Duration(service.PollingInterval) * time.Millisecond) {
 		stat := make(chan int, 1)
 		go func() {
 			fmt.Println("wallet ping")
@@ -273,10 +185,9 @@ func (service *TurtleService) pinger(cmd *exec.Cmd) {
 		case <-time.After(time.Millisecond * time.Duration(service.Timeout)):
 			service.PollingFailures++
 			if service.PollingFailures > service.MaxPollingFailures {
-				service.killer(cmd)
+				println("failed")
 			}
 		}
-		time.Sleep(time.Duration(service.PollingInterval) * time.Millisecond)
 	}
 	fmt.Println("out pinger")
 }
@@ -296,11 +207,6 @@ func (service *TurtleService) isSynced() bool {
 	return int64(blockCount)+1 >= int64(knownBlockCount)
 }
 
-// kills the daemon
-func (service *TurtleService) killer(cmd *exec.Cmd) {
-	fmt.Println("killed")
-	cmd.Process.Kill()
-}
 
 // Save - saves the wallet
 func (service *TurtleService) Save() {
