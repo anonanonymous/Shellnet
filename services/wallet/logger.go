@@ -1,7 +1,6 @@
-package turtleha
+package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,15 +8,13 @@ import (
 	"sync"
 	"time"
 
-	_ "github.com/lib/pq" // benis
+	_ "github.com/lib/pq"
 
-	"../turtlecoin-rpc-go/walletd"
+	"./turtlecoin-rpc-go/walletd"
 )
 
 var (
-	cwd           string
-	dbUser, dbPwd string
-	walletDB      *sql.DB
+	cwd string
 )
 
 func init() {
@@ -27,20 +24,6 @@ func init() {
 		panic(err)
 	}
 
-	if dbUser = os.Getenv("DB_USER"); dbUser == "" {
-		panic("Set the DB_USER env variable")
-	}
-	if dbPwd = os.Getenv("DB_PWD"); dbPwd == "" {
-		panic("Set the DB_PWD env variable")
-	}
-
-	walletDB, err = sql.Open("postgres", "postgres://"+dbUser+":"+dbPwd+"@localhost/tx_history?sslmode=disable")
-	if err != nil {
-		panic(err)
-	}
-	if err = walletDB.Ping(); err != nil {
-		panic(err)
-	}
 }
 
 // TurtleService - daemon config
@@ -52,10 +35,10 @@ type TurtleService struct {
 	RPCPort            int
 	PollingInterval    int // check if the daemon is alive every n seconds
 	ScanHeight         int64
-	LastBlock          int64  // last block scanned from getTransactions
-	ScanInterval       int // check for transactions every n seconds
-	SaveInterval       int // save every n seconds
-	Timeout            int // polling timeout
+	LastBlock          int64 // last block scanned from getTransactions
+	ScanInterval       int   // check for transactions every n seconds
+	SaveInterval       int   // save every n seconds
+	Timeout            int   // polling timeout
 	synced             bool
 	mux                sync.Mutex // only allow one goroutine to access a variable
 }
@@ -160,7 +143,6 @@ func (service *TurtleService) scanner() {
 			service.ScanHeight = service.LastBlock
 		}
 	}
-	fmt.Println("out scanner")
 }
 
 // checks if the wallet responds to rpc calls in the timeout period
@@ -176,7 +158,6 @@ func (service *TurtleService) pinger() {
 			)
 			stat <- 1
 		}()
-		fmt.Println(service.PollingFailures, service.MaxPollingFailures)
 		select {
 		case <-stat:
 			service.updateData()
@@ -189,7 +170,6 @@ func (service *TurtleService) pinger() {
 			}
 		}
 	}
-	fmt.Println("out pinger")
 }
 
 // check if the wallet is synced, saves the current block in a file
@@ -207,7 +187,6 @@ func (service *TurtleService) isSynced() bool {
 	return int64(blockCount)+1 >= int64(knownBlockCount)
 }
 
-
 // Save - saves the wallet
 func (service *TurtleService) Save() {
 	walletd.Save(
@@ -224,6 +203,7 @@ func (service *TurtleService) updateData() {
 		fmt.Println(err)
 		return
 	}
+	defer f.Close()
 	err = json.NewEncoder(f).Encode(
 		map[string]interface{}{
 			"scanHeight": service.ScanHeight,
@@ -234,12 +214,11 @@ func (service *TurtleService) updateData() {
 		fmt.Println(err)
 		return
 	}
-	f.Close()
 }
 
 // adds a transactoin into the database
 func addTransaction(src, dest, hash, paymentID string, amount float64) {
-	_, err := walletDB.Exec(`INSERT INTO transactions (addr_id, dest, hash, pID, amount)
+	_, err := walletDB.Exec(`INSERT INTO transactions (addr_id, dest, hash, paymentID, amount)
 			VALUES ((SELECT id FROM addresses WHERE address = $1),
 				$2, $3, $4, $5);`, src, dest, hash, paymentID, amount/100)
 	if err != nil {
