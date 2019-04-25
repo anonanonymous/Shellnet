@@ -216,7 +216,7 @@ func (service *TurtleService) updateData() {
 	}
 }
 
-// adds a transactoin into the database
+// adds a transaction into the database
 func addTransaction(src, dest, hash, paymentID string, amount float64) {
 	_, err := walletDB.Exec(`INSERT INTO transactions (addr_id, dest, hash, paymentID, amount)
 			VALUES ((SELECT id FROM addresses WHERE address = $1),
