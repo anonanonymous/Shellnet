@@ -4,17 +4,48 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="icon" href="/assets/images/fav_icon.ico" type="image/x-icon">
-        <link rel="stylesheet" href="https://unpkg.com/unnamed" crossorigin="anonymous"/>
-        <link rel="stylesheet prefetch" href="/assets/css/tabs.css"/>
-        <link rel="stylesheet prefetch" href="/assets/css/widgets.css"/>
-        <link rel="preload" href="/assets/css/shellnet.common.css" as="style">
+        <link rel="stylesheet" href="https://unpkg.com/unnamed@1.2.6/dist/css/unnamed.min.css" crossorigin="anonymous"/>
+        <link rel="stylesheet" href="/assets/css/tabs.css"/>
+        <link rel="stylesheet" href="/assets/css/widgets.css"/>
+        <link rel="stylesheet" href="/assets/css/shellnet.common.css"/>
         <link rel="stylesheet" href="/assets/css/main.css"/>
         <title>Shellnet</title>
     </head>
+    <script>
+        function setSrcQuery(e, q) {
+            var src  = e.src;
+            var p = src.indexOf('?');
+            if (p >= 0) {
+                src = src.substr(0, p);
+            }
+            e.src = src + "?" + q
+        }
+        function playAudio() {
+            var le = document.getElementById("lang");
+            var lang = le.options[le.selectedIndex].value;
+            var e = document.getElementById('audio')
+            setSrcQuery(e, "lang=" + lang)
+            e.style.display = 'block';
+            e.autoplay = 'true';
+            return false;
+        }
+        function changeLang() {
+            var e = document.getElementById('audio')
+            if (e.style.display == 'block') {
+                playAudio();
+            }
+        }
+        function reload() {
+            setSrcQuery(document.getElementById('image'), "reload=" + (new Date()).getTime());
+            setSrcQuery(document.getElementById('image2'), "reload=" + (new Date()).getTime());
+            setSrcQuery(document.getElementById('audio'), (new Date()).getTime());
+            return false;
+        }
+    </script>
     <body>
         <div class="full-container">
-            <div class="brand-header">
-                <img src="/assets/images/brand-logo.png" class="brand-header-logo"/>
+            <div class="header title">
+                <span>SHELLNET</span>
             </div>
             <div class="content">
                 <div class="tab_container container">
@@ -57,6 +88,11 @@
                             <span class="lock-icon"></span>
                             <input type="password" name="password" placeholder="password" required/>
                             </div>
+                         <p>Type the numbers you see in the picture below:</p>
+                            <p><img id=image src="/captcha/{{.CaptchaID}}.png" alt="Captcha image"></p>
+                            <a href="#" onclick="reload()">Reload</a>
+                            <input type=hidden name=captchaId value="{{.CaptchaID}}"><br>
+                            <input name=captchaSolution>
                             <button class="btn btn-primary button-green">Login</button>
                         </form>
                         </div>
@@ -79,6 +115,13 @@
                                         <span class="lock-icon"></span>
                                         <input type="password" name="verify_password" placeholder="verify password" required/>
                                     </div>
+                                         <p>Type the numbers you see in the picture below:</p>
+                            <p><img id=image2 src="/captcha/{{.CaptchaID}}.png" alt="Captcha image"></p>
+                            <a href="#" onclick="reload()">Reload</a>
+                            <input type=hidden name=captchaId value="{{.CaptchaID}}"><br>
+                            <input name=captchaSolution>
+
+                                    <p>By using Shellnet, you are agreeing to our <a href="/tos">Terms of Service</a></p>
                                     <button class="btn btn-primary button-green">Signup</button>
                                 </form>
                             </div>
@@ -86,7 +129,7 @@
                 </div>
             </div>
             <footer class="footer">
-                <code>Shellnet &copy; 2018</code>
+                <code>Shellnet &copy; 2019</code>
             </footer>
         </div>
     </body>
