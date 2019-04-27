@@ -32,4 +32,25 @@ function confirmation () {
     conf_msg.textContent = `You are sending ${amount} ${tickerSymbol} to: ${sendTo}`;
 }
 
+function getUrlVars() {
+  let vars = {};
+  let parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, (m,key,value) => {
+      vars[key] = value;
+  });
+  return vars;
+}
+
+function setPaymentForm() {
+  let vals = getUrlVars();
+  if (vals.address !== undefined) {
+      document.getElementById('send_to').value = vals.address;
+  }
+  if (vals.amount !== undefined) {
+      document.getElementById('send_amount').value = vals.amount;
+  }
+  if (vals.paymentid !== undefined) {
+      document.getElementById('s_paymentid').value = vals.paymentid;
+  }
+}
+
 window.setInterval(setWalletStatus, updateInterval);

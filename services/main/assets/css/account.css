@@ -7,7 +7,7 @@ body {
 body {
     height: 100%;
     align-items: center;
-    background: url('../images/background.svg'); /* Designed by Freepik */
+    background: url('/assets/images/background.svg'); /* Designed by Freepik */
     background-size: cover;
     background-position-y: center;
     display: flex;
@@ -192,7 +192,4 @@ table.tx td:last-child {
 }
 .link-logout:hover {
     color: #F7F7F7;
-}
-.link-logout:active {
-
 }
