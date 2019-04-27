@@ -18,8 +18,8 @@ function setWalletStatus () {
       document.getElementById("wallet_status").className = "orange-input";
     }
 
-    document.getElementById("available_balance").textContent = `${availableBalance} ${tickerSymbol}`;
-    document.getElementById("locked_amount").textContent = `${lockedAmount} ${tickerSymbol}`;
+    document.getElementById("available_balance").textContent = `${availableBalance}`;
+    document.getElementById("locked_amount").textContent = `${lockedAmount}`;
     document.getElementById("block_count").textContent = blockCount + "/" + knownBlockCount;
     console.log("checking wallet...");
   }
