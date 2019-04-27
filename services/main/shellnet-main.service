@@ -1,0 +1,12 @@
+[Unit]
+Description=shellnet main service
+After=network.target
+
+[Service]
+Type=simple
+Restart=on-failure
+WorkingDirectory=/root/Shellnet/services/main
+ExecStart=/root/Shellnet/services/main/run.sh start
+
+[Install]
+WantedBy=multi-user.target

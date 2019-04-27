@@ -22,7 +22,7 @@ func InitHandlers(r *httprouter.Router) {
 	r.POST("/signup", limit(signupHandler, strictRL))
 	r.GET("/account", limit(accountPage, ratelimiter))
 	r.GET("/account/keys", limit(walletKeys, ratelimiter))
-	r.POST("/account/delete", deleteHandler)
+	r.POST("/account/delete", limit(deleteHandler, ratelimiter))
 	r.GET("/account/wallet_info", limit(getWalletInfo, ratelimiter))
 	r.POST("/account/export_keys", limit(keyHandler, ratelimiter))
 	r.POST("/account/send_transaction", limit(sendHandler, ratelimiter))
@@ -134,14 +134,15 @@ func loginHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Param
 		http.Error(res, "Wrong captcha solution!", http.StatusForbidden)
 		return
 	}
+
 	username := req.FormValue("username")
 	password := req.FormValue("password")
-
 	response := tryAuth(username, password, "login")
 	if response.Status != "OK" {
 		InternalServerError(res, req, authMessage(res, response.Status, "login", "error"))
 		return
 	}
+
 	cookie := &http.Cookie{
 		Name:     "session",
 		Value:    response.Data["sessionID"].(string),
@@ -224,8 +225,7 @@ func signupHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 		InternalServerError(res, req, authMessage(res, message, "signup", "error"))
 	} else {
 		message = "Account Created, Please Log In"
-		http.Redirect(res, req, hostURI, http.StatusSeeOther)
-		//InternalServerError(res, req, authMessage(res, message, "login", "success"))
+		InternalServerError(res, req, authMessage(res, message, "login", "success"))
 	}
 }
 

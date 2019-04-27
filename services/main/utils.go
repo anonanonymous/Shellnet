@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/dchest/captcha"
+
 	"github.com/gomodule/redigo/redis"
 	"github.com/julienschmidt/httprouter"
 	"github.com/ulule/limiter/drivers/middleware/stdlib"
@@ -77,8 +79,9 @@ func authMessage(res http.ResponseWriter, message, page, spec string) error {
 		Messages: map[string]interface{}{spec: message},
 	}
 	data := struct {
-		PageAttr pageInfo
-	}{PageAttr: pg}
+		PageAttr  pageInfo
+		CaptchaID string
+	}{CaptchaID: captcha.New(), PageAttr: pg}
 	if spec == "error" {
 		res.WriteHeader(http.StatusUnauthorized)
 	} else {

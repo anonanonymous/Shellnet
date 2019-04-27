@@ -61,5 +61,5 @@ func init() {
 
 	wallet := NewService()
 	wallet.RPCPassword = rpcPwd
-	wallet.Start()
+	go wallet.Start()
 }

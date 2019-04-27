@@ -26,8 +26,6 @@ func main() {
 
 	InitHandlers(router)
 
-	log.Fatal(http.ListenAndServe(hostPort, router))
-
 	/* https to http redirection
 	go http.ListenAndServe(":80", http.HandlerFunc(httpsRedirect))
 	log.Println("Info: Starting Service on:", hostURI)
