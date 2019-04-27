@@ -6,10 +6,15 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
+	"github.com/dchest/captcha"
+
 	"github.com/gomodule/redigo/redis"
+	"github.com/julienschmidt/httprouter"
+	"github.com/ulule/limiter/drivers/middleware/stdlib"
 )
 
 type jsonResponse struct {
@@ -26,6 +31,35 @@ type pageInfo struct {
 	URI      string
 	Element  string
 	Messages map[string]interface{}
+}
+
+// limit - rate limiter middleware
+func limit(h httprouter.Handle, rl *stdlib.Middleware) httprouter.Handle {
+	return func(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
+		context, err := rl.Limiter.Get(req.Context(), rl.Limiter.GetIPKey(req))
+		if err != nil {
+			rl.OnError(res, req, err)
+			return
+		}
+
+		res.Header().Add("X-RateLimit-Limit", strconv.FormatInt(context.Limit, 10))
+		res.Header().Add("X-RateLimit-Remaining", strconv.FormatInt(context.Remaining, 10))
+		res.Header().Add("X-RateLimit-Reset", strconv.FormatInt(context.Reset, 10))
+
+		if context.Reached {
+			rl.OnLimitReached(res, req)
+			return
+		}
+		res.Header().Set("Access-Control-Allow-Origin", "*")
+		req.Body = http.MaxBytesReader(res, req.Body, 2048) // limit post size
+		h(res, req, p)
+	}
+}
+
+// httpsRedirect - redirects http to https
+func httpsRedirect(res http.ResponseWriter, req *http.Request) {
+	newURI := "https://" + req.Host + req.RequestURI
+	http.Redirect(res, req, newURI, http.StatusPermanentRedirect)
 }
 
 // InternalServerError - handle internal server errors
@@ -45,8 +79,9 @@ func authMessage(res http.ResponseWriter, message, page, spec string) error {
 		Messages: map[string]interface{}{spec: message},
 	}
 	data := struct {
-		PageAttr pageInfo
-	}{PageAttr: pg}
+		PageAttr  pageInfo
+		CaptchaID string
+	}{CaptchaID: captcha.New(), PageAttr: pg}
 	if spec == "error" {
 		res.WriteHeader(http.StatusUnauthorized)
 	} else {

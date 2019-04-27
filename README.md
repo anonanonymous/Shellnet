@@ -11,10 +11,15 @@ Don't forget to make your GOPATH export persistent.
 
 Install the necessary go libraries
 ```
-go get github.com/gomodule/redigo/redis \
+go get \
+	github.com/gomodule/redigo/redis \
 	github.com/julienschmidt/httprouter \
 	github.com/lib/pq \
-	github.com/opencoff/go-srp
+	github.com/opencoff/go-srp \
+	github.com/ulule/limiter \
+	github.com/ulule/limiter/drivers/middleware/stdlib \
+	github.com/ulule/limiter/drivers/store/memory \
+	github.com/dchest/captcha
 ```
 
 Clone the Shellnet repo in your ${GOPATH}/src.
@@ -28,11 +33,8 @@ Setup transactions database
 `~$ cat transaction_db.sql | psql -U <username> -h <host>`
 
 #### Setup Turtlecoin service
-Run this once.
+Run this once to generate a wallet container.
 `~$ ./turtle-service --container-file <container name> -p <password> -g`  
-
-Start turtle-service
-`~$ ./turtle-service --rpc-password <password> --container-file <container name> -p <container password> -d`
 
 Point turtle-service at an existing daemon like this
 `~$ ./turtle-service --rpc-password <rpc password> --container-file <container name> -p <container password> -d --daemon-address <daemon DNS or IP address> --daemon-port <daemon port>`

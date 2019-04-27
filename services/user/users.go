@@ -110,7 +110,7 @@ func login(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	password := req.FormValue("password")
 	usr, err := getUser(username)
 	if err != nil {
-		encoder.Encode(jsonResponse{Status: "Username not found"})
+		encoder.Encode(jsonResponse{Status: "Incorrect Username/Password"})
 		return
 	}
 
@@ -155,15 +155,15 @@ func login(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
 
 	proof, ok := srv.ClientOk(cauth)
 	if !ok {
-		encoder.Encode(jsonResponse{Status: "Error: Incorrect Username/Password"})
+		encoder.Encode(jsonResponse{Status: "Incorrect Username/Password"})
 		return
 	}
 	if !client.ServerOk(proof) {
-		encoder.Encode(jsonResponse{Status: "Error: Incorrect Username/Password"})
+		encoder.Encode(jsonResponse{Status: "Incorrect Username/Password"})
 		return
 	}
 	if 1 != subtle.ConstantTimeCompare(client.RawKey(), srv.RawKey()) {
-		encoder.Encode(jsonResponse{Status: "Error: Incorrect Username/Password"})
+		encoder.Encode(jsonResponse{Status: "Incorrect Username/Password"})
 		return
 	}
 
