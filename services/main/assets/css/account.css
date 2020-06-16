@@ -4,18 +4,6 @@ body {
     padding: 0;
 }
 
-body {
-    height: 100%;
-    align-items: center;
-    background: url('/assets/images/background.svg'); /* Designed by Freepik */
-    background-size: cover;
-    background-position-y: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    background-attachment: fixed;
-}
-
 .title {
     font-family: monospace;
     width: 100%;
@@ -28,18 +16,13 @@ body {
 .title code {
     font-size: larger;
 }
-.footer {
-    background-color: rgba(0,0,0,0.85);
-    color: #EEE;
-    padding: 6px;
-    box-sizing: border-box;
-    font-family: monospace;
-}
+
 .fa {
   	color: #d4d4d4;
 }
+
 .table-container, .container.tx {
-    margin: 10px 0;
+    margin: 10px auto;
     background-color: rgba(0,0,0,0.8);
     border-radius: 3px;
     box-shadow: 0 3px 12px 1px rgba(0, 0, 0, 0.3);

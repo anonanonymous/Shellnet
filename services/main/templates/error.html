@@ -12,30 +12,13 @@
 </head>
 
 <body>
+    <header>
+        <h1 id="title"><a href="/">SHELLNET</a></h1>
+    </header>
     <div id="main-container">
-        <div id="body" style="margin-top: 15%;">
-            <!-- :D Hey! -->
-            <!--
-             .==.
-          __/-^-^\
-         (' )^-^-^\)
-          `^UU^^UU^
-		-->
-            <div class="content">
-                <div class="content-panel">
-                    <span class="title landing-title">SHELLNET</span>
-
-                    <span class="tagline">A secure, easy-to-use wallet for TurtleCoin payments</span>
-                    {{ if .TUser }}
-                    <span class="hello-user">Hello {{ .TUser.Username }}</span>
-                    <a href="/account"><button class="btn btn-primary button-green">account</button></a>
-                    <a href="/logout" class="signup-link"><span>logout</span></a>
-                    {{ else }}
-                    <a href="/login"><button class="btn btn-primary button-green">login</button></a>
-                    <a href="/signup" class="signup-link"><span>create an account</span></a>
-                    {{ end }}
-                </div>
-            </div>
+        <div id="body">
+         <h1>{{ .Error }}</h1>
+         <h2>HTTP {{ .HTTPCode }}</h2>
         </div>
     </div>
     <footer>

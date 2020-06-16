@@ -6,197 +6,318 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"time"
 
-	"./turtlecoin-rpc-go/walletd"
 	_ "github.com/lib/pq"
 
 	"github.com/julienschmidt/httprouter"
 )
 
 func main() {
+	defer logFile.Close()
+	log.SetOutput(logFile)
+
 	router := httprouter.New()
-	router.GET("/status/:address", getStatus)
-	router.GET("/delete/:address", deleteAddress)
-	router.GET("/create", newAddress)
-	router.GET("/export_keys/:address", exportKeys)
-	router.GET("/transactions/:address/:n", getTransactions)
-	router.POST("/send_transaction", sendTransaction)
+
+	router.GET("/:address/status", getStatus)
+	router.GET("/:address/keys", getKeys)
+	router.GET("/:address/transactions", getTransactions)
+	router.GET("/:address/transactions/:offset", getTransactions)
+	//router.GET("/api/status", serviceStatus)
+	router.POST("/", createAddress)
+	router.POST("/:address/send", sendTransaction)
+
+	router.DELETE("/:address", deleteAddress)
+
+	log.Println("Info: Starting Service on:", hostURI)
 	log.Fatal(http.ListenAndServe(hostPort, router))
 }
 
-// createWallet - creates a new wallet
-func createWallet() (string, error) {
-	response := map[string]interface{}{}
-	walletdResponse := walletd.CreateAddress(
-		rpcPwd,
-		"localhost",
-		rpcPort,
-	)
-	json.NewDecoder(walletdResponse).Decode(&response)
-	address := response["result"].(map[string]interface{})["address"].(string)
-	return address, nil
-}
-
-// newAddress - creates an address for a new user
-func newAddress(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	encoder := json.NewEncoder(res)
-	address, err := createWallet()
+// createAddress - creates an address for a new user
+func createAddress(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	address, err := walletAPI.CreateAddress()
 	if err != nil {
-		encoder.Encode(jsonResponse{Status: err.Error()})
+		writeJSON(res, 400, jsMap{"status": err.Error()})
 		return
 	}
-	walletDB.Exec("INSERT INTO addresses (address) VALUES ($1);", address)
-	data := map[string]interface{}{"address": address}
-	encoder.Encode(jsonResponse{Status: "OK", Data: data})
+
+	go walletAPI.Save()
+	_, err = walletDB.Exec(`
+		INSERT INTO addresses (address)
+		VALUES ($1);`, address["address"],
+	)
+	if err != nil {
+		log.Println("createAddress:", err)
+		writeJSON(res, 500, jsMap{"status": err.Error()})
+		return
+	}
+
+	log.Println("createAddress: new subwallet", address["address"])
+	writeJSON(res, 201, jsMap{
+		"status": "OK",
+		"data":   address["address"],
+	})
 }
 
 // deleteAddress - removes address from container
 func deleteAddress(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	address := p.ByName("address")
-	walletd.DeleteAddress(
-		rpcPwd,
-		"localhost",
-		rpcPort,
-		address,
+	var address = p.ByName("address")
+	var addrID int64
+
+	// get the id
+	row := walletDB.QueryRow(`
+		SELECT id
+		FROM addresses
+		WHERE address = $1;`, address,
 	)
-	walletDB.Exec(`DELETE FROM transactions
-			WHERE addr_id = (SELECT id FROM addresses WHERE address = $1);`, address)
-	walletDB.Exec("DELETE FROM addresses WHERE address = $1;", address)
+	if err := row.Scan(&addrID); err != nil {
+		writeJSON(res, 400, jsMap{"status": err.Error()})
+		return
+	}
+
+	walletAPI.DeleteAddress(address)
+	_, err := walletDB.Exec(`
+		DELETE FROM transactions
+		WHERE addr_id = $1;`, addrID,
+	)
+	if err != nil {
+		log.Println("deleteAddress:", err)
+		writeJSON(res, 500, jsMap{"status": err.Error()})
+		return
+	}
+
+	go walletAPI.Save()
+	_, err = walletDB.Exec(`
+		DELETE FROM addresses
+		WHERE id = $1;`, addrID,
+	)
+	if err != nil {
+		log.Println("deleteAddress:", err)
+		writeJSON(res, 500, jsMap{"status": err.Error()})
+		return
+	}
+
+	log.Println("deleteAddress: deleted address", address)
+	writeJSON(res, 200, jsMap{"status": "OK"})
 }
 
 // getStatus - gets the balance and status of a wallet
 func getStatus(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	address := p.ByName("address")
-	response := jsonResponse{Data: map[string]interface{}{}}
-	temp := make(map[string]interface{}, 1)
-	walletdResponse := walletd.GetBalance(
-		rpcPwd,
-		"localhost",
-		rpcPort,
-		address,
-	)
-	json.NewDecoder(walletdResponse).Decode(&temp)
-	trtl := temp["result"].(map[string]interface{})["availableBalance"].(float64) / divisor
-	temp["result"].(map[string]interface{})["availableBalance"] = trtl
-	trtl = temp["result"].(map[string]interface{})["lockedAmount"].(float64)
-	temp["result"].(map[string]interface{})["lockedAmount"] = trtl / divisor
+	var address = p.ByName("address")
 
-	response.Data["balance"] = temp["result"]
-	walletdResponse = walletd.GetStatus(
-		rpcPwd,
-		"localhost",
-		rpcPort,
-	)
-	json.NewDecoder(walletdResponse).Decode(&temp)
-	response.Data["status"] = temp["result"]
-	json.NewEncoder(res).Encode(response)
+	println(address)
+	balance, err := walletAPI.GetAddressBalance(address)
+	if err != nil {
+		writeJSON(res, 400, jsMap{"status": err.Error()})
+		return
+	}
+
+	resp, err := walletAPI.Status()
+	if err != nil {
+		writeJSON(res, 400, jsMap{"status": err.Error()})
+		return
+	}
+
+	writeJSON(res, 200, jsMap{
+		"status": "OK",
+		"data": jsMap{
+			"status": *resp,
+			"balance": jsMap{
+				"address":  balance.Address,
+				"locked":   float64(balance.Locked) / divisor,
+				"unlocked": float64(balance.Unlocked) / divisor,
+			},
+		},
+	})
 }
 
 // sendTransaction - sends a transaction from address to dest
 func sendTransaction(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	dest := req.FormValue("destination")
-	amountStr := req.FormValue("amount")
-	paymentID := req.FormValue("payment_id")
-	address := req.FormValue("address")
-	extra := "" // TODO - use for messages
-	response := jsonResponse{}
-	if matched, _ := regexp.MatchString(addressFormat, dest); !matched {
-		json.NewEncoder(res).Encode(jsonResponse{Status: "Incorrect Address Format"})
+	var response jsMap
+	var tx struct {
+		Amount               string
+		Address, Destination string
+		PaymentID            string `json:"payment_id"`
+	}
+
+	err := json.NewDecoder(req.Body).Decode(&tx)
+	if err != nil {
+		writeJSON(res, 500, jsMap{"status": err.Error()})
 		return
 	}
-	if matched, _ := regexp.MatchString("^[0-9]+\\.{0,1}[0-9]{0,2}$", amountStr); !matched {
-		json.NewEncoder(res).Encode(jsonResponse{Status: "Incorrect Amount Format"})
+
+	_, err = walletAPI.ValidateAddress(tx.Destination)
+	if err != nil {
+		writeJSON(res, 400, jsMap{"status": "Incorrect Address Format"})
 		return
 	}
-	if matched, _ := regexp.MatchString("^[a-fA-F0-9]{64}$", paymentID); !matched && paymentID != "" {
-		json.NewEncoder(res).Encode(jsonResponse{Status: "Incorrect Payment ID Format"})
+	if matched, _ := regexp.MatchString("^[0-9]+\\.{0,1}[0-9]{0,2}$", tx.Amount); !matched {
+		writeJSON(res, 400, jsMap{"status": "Incorrect Amount Format"})
 		return
 	}
-	amount, _ := strconv.ParseFloat(amountStr, 10)
-	amount *= divisor
-	walletdResponse := walletd.SendTransaction(
-		rpcPwd,
-		"localhost",
-		rpcPort,
-		[]string{address},
+	if matched, _ := regexp.MatchString("^[a-fA-F0-9]{64}$", tx.PaymentID); !matched && tx.PaymentID != "" {
+		writeJSON(res, 400, jsMap{"status": "Incorrect Payment ID Format"})
+		return
+	}
+
+	iAmount, _ := strconv.ParseFloat(tx.Amount, 64)
+	iAmount *= divisor
+
+	txHash, err := walletAPI.SendTransactionAdvanced(
 		[]map[string]interface{}{
 			{
-				"amount":  int64(amount),
-				"address": dest,
+				"address": tx.Destination,
+				"amount":  iAmount,
 			},
 		},
-		transactionFee, // fee
-		0,              // unlock time
-		3,              // mixin
-		extra,
-		paymentID,
-		"", // change address
+		nil, nil, []string{tx.Address}, tx.PaymentID, tx.Address, nil,
 	)
-	json.NewDecoder(walletdResponse).Decode(&response.Data)
-	if message, ok := response.Data["error"]; ok {
-		response.Status = message.(map[string]interface{})["message"].(string)
-	} else {
-		response.Status = "OK"
+	if err != nil {
+		writeJSON(res, 500, jsMap{"status": err.Error()})
+		return
 	}
-	json.NewEncoder(res).Encode(response)
+
+	response = jsMap{
+		"status": "OK",
+		"data": jsMap{
+			"transactionHash": txHash,
+		},
+	}
+
+	writeJSON(res, 200, response)
 }
 
 // getTransactions - gets transaction history from the database
 func getTransactions(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	encoder := json.NewEncoder(res)
-	rows, err := walletDB.Query(`SELECT dest, hash, amount, paymentID, id FROM transactions
-								 WHERE addr_id = (SELECT id FROM addresses WHERE address = $1) AND id > $2 ORDER BY id DESC LIMIT 15;`,
-		p.ByName("address"), p.ByName("n"))
+	var lastHeight, addrID uint64
+	var ts time.Time
+	var address = p.ByName("address")
 
-	if err != nil {
-		encoder.Encode(jsonResponse{Status: err.Error()})
+	// get the last block scanned
+	row := walletDB.QueryRow(`
+			SELECT blockHeight, id
+			FROM addresses
+			WHERE address = $1;`, address,
+	)
+	if err := row.Scan(&lastHeight, &addrID); err != nil {
+		writeJSON(res, 400, jsMap{"status": err.Error()})
 		return
 	}
 
-	var tmp string
-	txs := make([]transaction, 0)
-	for rows.Next() {
-		tx := transaction{}
-		err := rows.Scan(&tmp, &tx.Hash, &tx.Amount, &tx.PaymentID, &tx.ID)
+	// get all transactions since last scan
+	wallet, _ := walletAPI.Status()
+	// uggo
+	if lastHeight < wallet.BlockCount {
+		transactions, err := walletAPI.GetAddressTransactionsInRange(
+			address,
+			lastHeight,
+			wallet.BlockCount,
+		)
 		if err != nil {
-			encoder.Encode(jsonResponse{Status: err.Error()})
+			writeJSON(res, 500, jsMap{"status": err.Error()})
 			return
 		}
-		if tmp[0] != ' ' {
-			tx.Destination = tmp
+
+		// put the latest transactions into db
+		for _, tx := range *transactions {
+			for _, transfer := range tx.Transfers {
+				if transfer.Address != address {
+					continue
+				}
+				_, err = walletDB.Exec(`
+					INSERT INTO transactions (addr_id, amount, hash, paymentID, _timestamp)
+					VALUES ($1, $2, $3, $4, $5);`,
+					addrID,
+					float64(transfer.Amount)/divisor,
+					tx.Hash,
+					tx.PaymentID,
+					time.Unix(int64(tx.Timestamp), 0),
+				)
+				if err != nil {
+					log.Println(err)
+				}
+			}
 		}
+		// update block scan height
+		_, err = walletDB.Exec(`
+		UPDATE addresses
+		SET blockHeight = $1
+		WHERE id = $2;`, wallet.BlockCount, addrID,
+		)
+		if err != nil {
+			writeJSON(res, 500, jsMap{"status": err.Error()})
+			return
+		}
+	}
+
+	// query database for transactions
+	txs := []Transaction{}
+	rows, err := walletDB.Query(`
+		SELECT hash, amount, paymentID, _timestamp, id
+		FROM transactions
+		WHERE addr_id = $1
+		ORDER BY id DESC LIMIT 15;`,
+		addrID,
+	)
+	if err != nil {
+		log.Println(err)
+		writeJSON(res, 500, jsMap{"status": err.Error()})
+		return
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		tx := Transaction{}
+		err := rows.Scan(
+			&tx.Hash,
+			&tx.Amount,
+			&tx.PaymentID,
+			&ts,
+			&tx.ID,
+		)
+		if err != nil {
+			writeJSON(res, 500, jsMap{"status": err.Error()})
+			return
+		}
+
+		tx.Timestamp = uint64(ts.Unix())
 		txs = append(txs, tx)
 	}
 
 	if err = rows.Err(); err != nil {
-		encoder.Encode(jsonResponse{Status: err.Error()})
+		writeJSON(res, 500, jsMap{"status": err.Error()})
 		return
 	}
-	encoder.Encode(jsonResponse{Status: "OK",
-		Data: map[string]interface{}{"transactions": txs}})
+
+	writeJSON(res, 200, jsMap{
+		"status": "OK",
+		"data":   jsMap{"transactions": txs}},
+	)
 }
 
-// exportKeys - exports the spend and view key
-func exportKeys(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	encoder := json.NewEncoder(res)
+// getKeys - retrieves the spend and view key
+func getKeys(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
+	var err error
 	address := p.ByName("address")
-	response := jsonResponse{Status: "OK", Data: map[string]interface{}{}}
-	key := map[string]interface{}{}
-	walletdResponse := walletd.GetViewKey(
-		rpcPwd,
-		"localhost",
-		rpcPort,
-	)
-	json.NewDecoder(walletdResponse).Decode(&key)
-	response.Data["viewKey"] = key["result"].(map[string]interface{})["viewSecretKey"].(string)
-	walletdResponse = walletd.GetSpendKeys(
-		rpcPwd,
-		"localhost",
-		rpcPort,
-		address,
-	)
-	json.NewDecoder(walletdResponse).Decode(&key)
-	response.Data["spendPublicKey"] = key["result"].(map[string]interface{})["spendPublicKey"].(string)
-	response.Data["spendSecretKey"] = key["result"].(map[string]interface{})["spendSecretKey"].(string)
-	encoder.Encode(response)
+
+	keys, err := walletAPI.GetKeys(address)
+	if err != nil {
+		writeJSON(res, 500, jsMap{
+			"status": "Error retrieving wallet keys",
+		})
+		return
+	}
+
+	response := jsMap{
+		"status": "OK",
+		"data": jsMap{
+			"keys": jsMap{
+				"publicSpendKey":  keys["publicSpendKey"],
+				"privateSpendKey": keys["privateSpendKey"],
+				"viewKey":         viewKey,
+			},
+		},
+	}
+
+	writeJSON(res, 200, response)
 }

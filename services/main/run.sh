@@ -1,6 +1,2 @@
 #!/usr/bin/env bash
-HOST_URI='http://localhost' \
-HOST_PORT=':8080' \
-USER_URI='http://localhost:8081' \
-WALLET_URI='http://localhost:8082' \
-go run main.go init.go handlers.go utils.go
+go run main.go config.go init.go handlers.go utils.go redis_utils.go types.go wallet_helpers.go user_helpers.go http_utils.go

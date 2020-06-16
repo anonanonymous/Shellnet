@@ -1,3 +1,0 @@
-[submodule "services/wallet/turtlecoin-rpc-go"]
-	path = services/wallet/turtlecoin-rpc-go
-	url = https://github.com/turtlecoin/turtlecoin-rpc-go

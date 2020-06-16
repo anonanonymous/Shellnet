@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -11,7 +11,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// InitHandlers - sets up the http handlers
+// InitHandlers - registers the http handlers
 func InitHandlers(r *httprouter.Router) {
 	r.GET("/", limit(index, ratelimiter))
 	r.GET("/tos", limit(terms, ratelimiter))
@@ -26,134 +26,176 @@ func InitHandlers(r *httprouter.Router) {
 	r.GET("/account/wallet_info", limit(getWalletInfo, ratelimiter))
 	r.POST("/account/export_keys", limit(keyHandler, ratelimiter))
 	r.POST("/account/send_transaction", limit(sendHandler, ratelimiter))
-	r.Handler(http.MethodGet, "/captcha/*name",
-		captcha.Server(captcha.StdWidth, captcha.StdHeight))
-	r.Handler(http.MethodGet, "/assets/*filepath", http.StripPrefix("/assets",
-		http.FileServer(http.Dir("./assets"))))
+	r.Handler("GET", "/captcha/*captchaID", captcha.Server(
+		captcha.StdWidth,
+		captcha.StdHeight,
+	))
+	r.Handler(http.MethodGet, "/assets/*filepath", http.StripPrefix(
+		"/assets",
+		http.FileServer(http.Dir("./assets")),
+	))
 }
 
 // index displays homepage - method: GET
 func index(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	var err error
-	if alreadyLoggedIn(res, req) {
-		usr := sessionGetKeys(req, "session")
-		if usr == nil {
-			http.Error(res, "Couldn't find user session", http.StatusInternalServerError)
-			return
+	var data interface{}
+
+	if u, err := alreadyLoggedIn(res, req); err == nil {
+		data = TPage{
+			TUser: *u,
 		}
-		data := struct {
-			User userInfo
-		}{User: *usr}
-		err = templates.ExecuteTemplate(res, "index.html", data)
-	} else {
-		err = templates.ExecuteTemplate(res, "index.html", nil)
 	}
-	InternalServerError(res, req, err)
+
+	err = templates.ExecuteTemplate(res, "index.html", data)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
-// accountPage - shows wallet info and stufffs
+// accountPage - shows account and wallet info
 func accountPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	if !alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, hostURI, http.StatusSeeOther)
-		return
-	}
-	usr := sessionGetKeys(req, "session")
-	if usr == nil {
-		http.Error(res, "Couldn't find user session", http.StatusInternalServerError)
-		return
-	}
-	walletResponse := walletCmd("status", usr.Address)
-	if walletResponse.Status != "OK" {
-		http.Error(res, "Error loading wallet status", http.StatusInternalServerError)
-		return
-	}
-	walletIcon := walletStatusColor(walletResponse)
+	var user *User
 
-	pg := pageInfo{
-		URI:      hostURI,
-		Messages: map[string]interface{}{"wallet_icon": walletIcon},
-	}
-	if txHash, err := req.Cookie("transactionHash"); err == nil {
-		pg.Messages["txHash"] = txHash.Value
-		http.SetCookie(res, &http.Cookie{Name: "transactionHash", Path: "/account", MaxAge: -1})
+	if u, err := alreadyLoggedIn(res, req); err == nil {
+		user = u
+	} else {
+		errorTemplate(res, "Could not find user session", AUTH_ERROR)
+		return
 	}
 
-	txs := walletCmd("transactions/"+usr.Address, "0")
-	data := struct {
-		User         userInfo
-		Wallet       map[string]interface{}
-		PageAttr     pageInfo
-		Transactions map[string]interface{}
-	}{User: *usr, Wallet: walletResponse.Data, PageAttr: pg, Transactions: txs.Data}
-	InternalServerError(res, req, templates.ExecuteTemplate(res, "account.html", data))
+	params := req.URL.Query()
+	walletInfo, err := walletReq("status", user.Address, nil)
+	if err != nil {
+		log.Println(err)
+		errorTemplate(res, ERRORS[WALLET_ERROR], AUTH_ERROR)
+		return
+	}
+
+	color := walletStatusColor(walletInfo.Status)
+	txs, err := walletReq("transactions", user.Address, nil, "")
+	if err != nil {
+		log.Println(err)
+		errorTemplate(res, ERRORS[WALLET_ERROR], AUTH_ERROR)
+		return
+	}
+
+	pd := TPage{
+		TUser:   *user,
+		TWallet: *walletInfo,
+		TData: jsMap{
+			"uri":          hostURI,
+			"transactions": txs.Transactions,
+			"wallet_icon":  color,
+			"url_params":   params,
+		},
+	}
+
+	// transaction hash/error  modal data
+	if txHash, err := req.Cookie("txHash"); err == nil {
+		pd.TData["txHash"] = txHash.Value
+		http.SetCookie(res, &http.Cookie{
+			Name:   "txHash",
+			Path:   "/account",
+			MaxAge: -1,
+		})
+	}
+	if cookie, err := req.Cookie("error"); err == nil {
+		pd.TData["error"] = cookie.Value
+		http.SetCookie(res, &http.Cookie{
+			Name:   "error",
+			Path:   "/account",
+			MaxAge: -1,
+		})
+	}
+
+	err = templates.ExecuteTemplate(res, "account.html", pd)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 // signupPage - displays signup page - method: GET
 func signupPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	if alreadyLoggedIn(res, req) {
+	if _, err := alreadyLoggedIn(res, req); err == nil {
 		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
-	pg := pageInfo{
-		URI:     hostURI,
-		Element: "signup",
+
+	pd := TPage{
+		TData: jsMap{
+			"uri":       hostURI,
+			"element":   "signup",
+			"captchaID": captcha.New(),
+		},
 	}
-	data := struct {
-		CaptchaID string
-		PageAttr  pageInfo
-	}{CaptchaID: captcha.New(), PageAttr: pg}
-	err := templates.ExecuteTemplate(res, "login.html", data)
-	InternalServerError(res, req, err)
+
+	err := templates.ExecuteTemplate(res, "login.html", pd)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 // loginPage - displays login page - method: GET
 func loginPage(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	if alreadyLoggedIn(res, req) {
+	if _, err := alreadyLoggedIn(res, req); err == nil {
 		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
-	pg := pageInfo{
-		URI:     hostURI,
-		Element: "login",
+
+	pd := TPage{
+		TData: jsMap{
+			"uri":       hostURI,
+			"element":   "login",
+			"captchaID": captcha.New(),
+		},
 	}
-	data := struct {
-		CaptchaID string
-		PageAttr  pageInfo
-	}{CaptchaID: captcha.New(), PageAttr: pg}
-	err := templates.ExecuteTemplate(res, "login.html", data)
-	InternalServerError(res, req, err)
+
+	err := templates.ExecuteTemplate(res, "login.html", pd)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
-// loginHandler handles logins, redirects to account page on succeess - method: POST
+// loginHandler handles logins method: POST
 func loginHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	if alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, hostURI+"/account", http.StatusSeeOther)
+	if _, err := alreadyLoggedIn(res, req); err == nil {
+		http.Redirect(res, req, hostURI+"/account", http.StatusForbidden)
 		return
 	}
-	if !captcha.VerifyString(req.FormValue("captchaId"), req.FormValue("captchaSolution")) {
-		http.Error(res, "Wrong captcha solution!", http.StatusForbidden)
+	if !captcha.VerifyString(req.FormValue("captchaID"), req.FormValue("captchaSolution")) {
+		errorTemplate(res, "Wrong captcha solution!", http.StatusForbidden)
 		return
 	}
 
 	username := req.FormValue("username")
 	password := req.FormValue("password")
-	response := tryAuth(username, password, "login")
-	if response.Status != "OK" {
-		InternalServerError(res, req, authMessage(res, response.Status, "login", "error"))
+	resp, err := userReq("login", "", jsMap{
+		"username": username,
+		"password": password,
+	})
+	if err != nil {
+		log.Println("loginHandler: ", err)
+		errorTemplate(res, err.Error(), http.StatusForbidden)
 		return
 	}
 
 	cookie := &http.Cookie{
 		Name:     "session",
-		Value:    response.Data["sessionID"].(string),
+		Value:    (*resp)["sessionID"],
 		Path:     "/",
 		HttpOnly: true,
-		Expires:  time.Now().Add(time.Hour * 420),
+		Expires:  time.Now().Add(time.Hour * sessionDuration),
 	}
-	address := response.Data["address"].(string)
-	err := sessionSetKeys(cookie.Value, username, address)
+	address := (*resp)["address"]
+
+	redisSAdd(address, []string{cookie.Value})
+	err = redisHMSet(cookie.Value, jsMap{
+		"username": username,
+		"address":  address,
+	})
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
+		errorTemplate(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -163,34 +205,42 @@ func loginHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Param
 
 // deleteHandler - deletes user from database and deletes wallet
 func deleteHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	if !alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, hostURI, http.StatusSeeOther)
+	var user *User
+
+	if u, err := alreadyLoggedIn(res, req); err == nil {
+		user = u
+	} else {
+		errorTemplate(res, "Could not find user session", http.StatusForbidden)
 		return
 	}
-	usr := sessionGetKeys(req, "session")
-	if usr == nil {
-		http.Error(res, "Couldn't find user session", http.StatusInternalServerError)
-		return
+
+	go walletReq("delete", user.Address, nil)
+	go userReq("delete", user.Username, nil)
+
+	sessions, _ := redisSMembers(user.Address)
+	for _, sess := range sessions {
+		redisSRem(user.Address, sess)
+		redisDel(sess)
 	}
-	go walletCmd("delete", usr.Address)
-	go http.Get(usrURI + "/delete/" + usr.Username)
 	cookie := &http.Cookie{
 		Name:   "session",
 		Path:   "/",
 		MaxAge: -1,
 	}
+
 	http.SetCookie(res, cookie)
 	http.Redirect(res, req, hostURI, http.StatusSeeOther)
 }
 
 // logoutHandler - removes the user cookie from redis - method: GET
 func logoutHandler(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	if !alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, hostURI, http.StatusSeeOther)
+	if _, err := alreadyLoggedIn(res, req); err != nil {
+		errorTemplate(res, "Could not find user session", http.StatusForbidden)
 		return
 	}
+
 	cookie, _ := req.Cookie("session")
-	go sessionDelKey(cookie.Value)
+	go redisDel(cookie.Value)
 
 	cookie = &http.Cookie{
 		Name:   "session",
@@ -204,139 +254,185 @@ func logoutHandler(res http.ResponseWriter, req *http.Request, p httprouter.Para
 
 // signupHandler tries to add a new user - method: POST
 func signupHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	if alreadyLoggedIn(res, req) {
+	var message string
+
+	if _, err := alreadyLoggedIn(res, req); err == nil {
 		http.Redirect(res, req, hostURI, http.StatusSeeOther)
 		return
 	}
-	var message string
+
 	username := req.FormValue("username")
 	password := req.FormValue("password")
 	verifyPassword := req.FormValue("verify_password")
 
+	// uggo
 	if len(username) < 1 || len(password) < 1 || len(username) > 64 {
 		message = "Incorrect Username/Password format"
 	} else if password != verifyPassword {
 		message = "Passwords do not match"
-	} else if response := tryAuth(username, password, "signup"); response.Status != "OK" {
+	} else if response, err := userReq("signup", "", jsMap{
+		"username": username,
+		"password": password,
+	}); err != nil {
+		log.Println((*response)["status"])
 		message = "Could not create account. Try again"
 	}
 
 	if message != "" {
-		InternalServerError(res, req, authMessage(res, message, "signup", "error"))
+		errorTemplate(res, message, http.StatusInternalServerError)
 	} else {
-		message = "Account Created, Please Log In"
-		InternalServerError(res, req, authMessage(res, message, "login", "success"))
+		message = "Account created. Please log in " + username
+		authMessage(res, message, "login", "success")
 	}
 }
 
 // getWalletInfo - gets wallet info
 func getWalletInfo(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	if !alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, hostURI, http.StatusSeeOther)
+	var user *User
+
+	if u, err := alreadyLoggedIn(res, req); err == nil {
+		user = u
+	} else {
+		errorTemplate(res, "Could not find user session", http.StatusForbidden)
 		return
 	}
-	usr := sessionGetKeys(req, "session")
-	if usr == nil {
-		http.Error(res, "Couldn't find user session", http.StatusInternalServerError)
+	println(user.Address)
+	response, err := walletReq("status", user.Address, nil)
+	if err != nil {
+		errorTemplate(res, ERRORS[WALLET_ERROR], WALLET_ERROR)
 		return
 	}
-	response := walletCmd("status", usr.Address)
-	if response.Status == "OK" {
-		json.NewEncoder(res).Encode(response)
+
+	if err == nil {
+		json.NewEncoder(res).Encode(jsMap{
+			"balance": *response.Balance,
+			"status":  *response.Status,
+		})
 	}
 }
 
 // sendHandler - sends a transaction
 func sendHandler(res http.ResponseWriter, req *http.Request, p httprouter.Params) {
-	if !alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, hostURI, http.StatusSeeOther)
-		return
-	}
 	var message string
-	usr := sessionGetKeys(req, "session")
-	if usr == nil {
-		http.Error(res, "Couldn't find user session", http.StatusInternalServerError)
+	var user *User
+	var name = "txHash"
+
+	if u, err := alreadyLoggedIn(res, req); err == nil {
+		user = u
+	} else {
+		errorTemplate(res, "Could not find user session", http.StatusForbidden)
 		return
 	}
 
-	resb, err := http.PostForm(walletURI+"/send_transaction",
-		url.Values{
-			"amount":      {req.FormValue("amount")},
-			"address":     {usr.Address},
-			"destination": {strings.TrimSpace(req.FormValue("destination"))},
-			"payment_id":  {req.FormValue("payment_id")},
-		})
+	resp, err := walletReq("send", user.Address, jsMap{
+		"amount":      req.FormValue("amount"),
+		"address":     user.Address,
+		"destination": strings.TrimSpace(req.FormValue("destination")),
+		"payment_id":  req.FormValue("payment_id"),
+	})
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	response := jsonResponse{}
-	json.NewDecoder(resb.Body).Decode(&response)
-	if response.Status != "OK" {
-		message = "Error!: " + response.Status
+		name = "error"
+		message = "Sending transaction failed"
+		log.Println(user.Username, err)
 	} else {
-		message = response.Data["result"].(map[string]interface{})["transactionHash"].(string)
+		message = *resp.TxHash
 	}
+
 	c := &http.Cookie{
-		Name:  "transactionHash",
+		Name:  name,
 		Path:  "/account",
 		Value: message,
 	}
+
 	http.SetCookie(res, c)
 	http.Redirect(res, req, hostURI+"/account", http.StatusSeeOther)
 }
 
 // keyHandler - shows the wallet keys of a user
 func keyHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	if !alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, hostURI, http.StatusSeeOther)
+	var user *User
+
+	if u, err := alreadyLoggedIn(res, req); err == nil {
+		user = u
+	} else {
+		errorTemplate(res, "Could not find user session", http.StatusForbidden)
 		return
 	}
-	usr := sessionGetKeys(req, "session")
+
 	password := req.FormValue("password")
-	response := tryAuth(usr.Username, password, "login")
-	if response.Status != "OK" {
-		http.Error(res, "Authentication Failed", http.StatusInternalServerError)
+	response, err := userReq("login", "", jsMap{
+		"username": user.Username,
+		"password": password,
+	})
+	if err != nil {
+		log.Println(err)
+		errorTemplate(res, "Authentication Failed", http.StatusForbidden)
 		return
 	}
+
 	c := &http.Cookie{
 		Name:     "key",
-		Value:    response.Data["sessionID"].(string),
+		Value:    (*response)["sessionID"],
 		HttpOnly: true,
 		Path:     "/account/keys",
 	}
+
 	http.SetCookie(res, c)
-	sessionSetKeys(response.Data["sessionID"].(string), usr.Username, usr.Address)
+	err = redisHMSet((*response)["sessionID"], jsMap{
+		"username":       user.Username,
+		"address":        user.Address,
+		"two_fa_enabled": user.TwoFAEnabled,
+	})
+	if err != nil {
+		log.Println(err)
+		errorTemplate(res, ERRORS[WALLET_ERROR], WALLET_ERROR)
+		return
+	}
+
 	http.Redirect(res, req, hostURI+"/account/keys", http.StatusSeeOther)
 }
 
 // walletKeys - shows the wallet keys
 func walletKeys(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	if !alreadyLoggedIn(res, req) {
-		http.Redirect(res, req, hostURI, http.StatusSeeOther)
+	var user *User
+
+	if u, err := alreadyLoggedIn(res, req); err == nil {
+		user = u
+	} else {
+		errorTemplate(res, "Could not find user session", http.StatusForbidden)
 		return
 	}
-	usr := sessionGetKeys(req, "key")
-	if usr == nil {
-		http.Error(res, "No hackermans allowed", http.StatusInternalServerError)
-		return
-	}
+
 	cookie, _ := req.Cookie("key")
-	go sessionDelKey(cookie.Value)
-	http.SetCookie(res, &http.Cookie{Name: "key", Path: "/account/keys", MaxAge: -1})
+	go redisDel(cookie.Value)
+	http.SetCookie(res, &http.Cookie{
+		Name:   "key",
+		Path:   "/account/keys",
+		MaxAge: -1,
+	})
 
-	keys := walletCmd("export_keys", usr.Address)
+	keys, err := walletReq("keys", user.Address, nil)
+	if err != nil {
+		log.Println("walletKeys:", err)
+		errorTemplate(res, ERRORS[AUTH_ERROR], AUTH_ERROR)
+		return
+	}
 
-	data := struct {
-		User userInfo
-		Keys map[string]interface{}
-	}{User: userInfo{Username: usr.Username}, Keys: keys.Data}
-	err := templates.ExecuteTemplate(res, "keys.html", data)
-	InternalServerError(res, req, err)
+	data := TPage{
+		TUser: *user,
+		TData: jsMap{
+			"publicSpendKey":  (*keys.Keys)["publicSpendKey"],
+			"privateSpendKey": (*keys.Keys)["privateSpendKey"],
+			"viewKey":         (*keys.Keys)["viewKey"],
+		},
+	}
+	err = templates.ExecuteTemplate(res, "keys.html", data)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 // terms - shows the terms of service
 func terms(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	err := templates.ExecuteTemplate(res, "terms.html", nil)
-	InternalServerError(res, req, err)
+	templates.ExecuteTemplate(res, "terms.html", nil)
 }

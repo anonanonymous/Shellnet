@@ -45,3 +45,26 @@
 .grey-input span:before {
     color: #D9D9D9 !important;
 }
+
+
+.button-green {
+  background-color: #04A148;
+}
+.button-green:hover {
+  color: #FEFEFE !important;
+  background-color: #04AE4D;
+}
+.btn-primary {
+  margin: 10px 0px;
+  min-width: 180px;
+}
+.btn-primary:hover {
+  color: #FF9D49;
+}
+.signup-link {
+  padding: 8px !important;
+  color: #FEFEFE;
+}
+.signup-link:hover {
+  color: #04A148;
+}

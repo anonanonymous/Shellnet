@@ -2,8 +2,10 @@
 CREATE database users;
 \c users;
 CREATE TABLE accounts (
-IH char(64) NOT NULL,
-Verifier char(585) NOT NULL,
-Username varchar(64) NOT NULL UNIQUE,
-ID  SERIAL PRIMARY KEY,
-address char(99) NOT NULL);
+	ih CHAR(64) NOT NULL,
+	verifier CHAR(585) NOT NULL,
+	username VARCHAR(64) NOT NULL UNIQUE,
+	id  SERIAL PRIMARY KEY,
+	totp VARCHAR(160) DEFAULT '',
+	address CHAR(99) NOT NULL
+);

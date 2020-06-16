@@ -1,136 +1,190 @@
 <!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="icon" href="/assets/images/fav_icon.ico" type="image/x-icon">
-        <link rel="stylesheet" href="https://unpkg.com/unnamed@1.2.6/dist/css/unnamed.min.css" crossorigin="anonymous"/>
-        <link rel="stylesheet" href="/assets/css/tabs.css"/>
-        <link rel="stylesheet" href="/assets/css/widgets.css"/>
-        <link rel="stylesheet" href="/assets/css/shellnet.common.css"/>
-        <link rel="stylesheet" href="/assets/css/main.css"/>
-        <title>Shellnet</title>
-    </head>
-    <script>
-        function setSrcQuery(e, q) {
-            var src  = e.src;
-            var p = src.indexOf('?');
-            if (p >= 0) {
-                src = src.substr(0, p);
-            }
-            e.src = src + "?" + q
+<html>
+<head>
+    <title>Shellnet</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="/assets/images/fav_icon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://unpkg.com/unnamed" />
+    <link rel="stylesheet" href="/assets/css/tabs.css" />
+    <link rel="stylesheet" href="/assets/css/widgets.css" />
+    <link rel="stylesheet" href="/assets/css/shellnet.common.css" />
+    <link rel="stylesheet" href="/assets/css/light-modal.min.css" />
+    <link rel="stylesheet" href="/assets/css/main.css" />
+</head>
+<script>
+    function setSrcQuery(e, q) {
+        var src = e.src;
+        var p = src.indexOf('?');
+        if (p >= 0) {
+            src = src.substr(0, p);
         }
-        function playAudio() {
-            var le = document.getElementById("lang");
-            var lang = le.options[le.selectedIndex].value;
-            var e = document.getElementById('audio')
-            setSrcQuery(e, "lang=" + lang)
-            e.style.display = 'block';
-            e.autoplay = 'true';
-            return false;
-        }
-        function changeLang() {
-            var e = document.getElementById('audio')
-            if (e.style.display == 'block') {
-                playAudio();
-            }
-        }
-        function reload() {
-            setSrcQuery(document.getElementById('image'), "reload=" + (new Date()).getTime());
-            setSrcQuery(document.getElementById('image2'), "reload=" + (new Date()).getTime());
-            setSrcQuery(document.getElementById('audio'), (new Date()).getTime());
-            return false;
-        }
-    </script>
-    <body>
-        <div class="full-container">
-            <div class="header title">
-                <span>SHELLNET</span>
-            </div>
-            <div class="content">
-                <div class="tab_container container">
-                        {{ if index .PageAttr.Messages "error"}}
-                        <div class="alert error">
-                            <input type="checkbox" id="alert1"/>
-                            <label class="close" title="close" for="alert1">&times
-                            </label>
-                            <p class="inner">
-                            <strong>Error!</strong> {{ index .PageAttr.Messages "error" }}
-                            </p>
-                        </div>
-                        {{ end }}
-                        {{ if index .PageAttr.Messages "success"}}
-                        <div class="alert success">
-                            <input type="checkbox" id="alert1"/>
-                            <label class="close" title="close" for="alert1">&times
-                            </label>
-                            <p class="inner">
-                            <strong>Success!</strong> {{ index .PageAttr.Messages "success" }}
-                            </p>
-                        </div>
-                        {{ end }}
-                    <input id="tab1" type="radio" name="tabs" {{ if eq .PageAttr.Element "login" }}checked{{ end }}>
-                    <label for="tab1"><span>Login</span></label>
+        e.src = src + "?" + q
+    }
+    function reload() {
+        setSrcQuery(document.getElementById('image'), "reload=" + (new Date()).getTime());
+        setSrcQuery(document.getElementById('image2'), "reload=" + (new Date()).getTime());
+        return false;
+    }
+</script>
 
-                    <input id="tab2" type="radio" name="tabs" {{ if eq .PageAttr.Element "signup" }}checked{{ end }}>
-                    <label for="tab2"><span>Signup</span></label>
-
-                    <section id="content1" class="tab-content">
-                        <div class="container">
-                        <h1 class="center-text">Log Into Your Account</h1>
-                        <form action={{ printf "%s%s" .PageAttr.URI "/login" }} method="POST">
-                            <div class="input-field grey-input">
-                            <span class="user-icon"></span>
-                            <input type="text" name="username" placeholder="username" autofocus="" pattern="^.{1,64}$" required/>
-                            </div>
-
-                            <div class="input-field grey-input">
-                            <span class="lock-icon"></span>
-                            <input type="password" name="password" placeholder="password" required/>
-                            </div>
-                         <p>Type the numbers you see in the picture below:</p>
-                            <p><img id=image src="/captcha/{{.CaptchaID}}.png" alt="Captcha image"></p>
-                            <a href="#" onclick="reload()">Reload</a>
-                            <input type=hidden name=captchaId value="{{.CaptchaID}}"><br>
-                            <input name=captchaSolution>
-                            <button class="btn btn-primary button-green">Login</button>
-                        </form>
-                        </div>
-                    </section>
-
-                    <section id="content2" class="tab-content">
-                        <div class="container">
-                            <h1 class="center-text">Create a New Account</h1>
-                                <form action={{ printf "%s%s" .PageAttr.URI "/signup" }} method="POST">
-                                    <div class="input-field grey-input">
-                                        <span class="user-icon"></span>
-                                        <input type="text" name="username" placeholder="username" autofocus="" pattern="^.{1,64}$" required/>
-                                    </div>
-
-                                    <div class="input-field grey-input">
-                                        <span class="lock-icon"></span>
-                                        <input type="password" name="password" placeholder="password" required/>
-                                    </div>
-                                    <div class="input-field grey-input">
-                                        <span class="lock-icon"></span>
-                                        <input type="password" name="verify_password" placeholder="verify password" required/>
-                                    </div>
-                                         <p>Type the numbers you see in the picture below:</p>
-                            <p><img id=image2 src="/captcha/{{.CaptchaID}}.png" alt="Captcha image"></p>
-                            <a href="#" onclick="reload()">Reload</a>
-                            <input type=hidden name=captchaId value="{{.CaptchaID}}"><br>
-                            <input name=captchaSolution>
-
-                                    <p>By using Shellnet, you are agreeing to our <a href="/tos">Terms of Service</a></p>
-                                    <button class="btn btn-primary button-green">Signup</button>
-                                </form>
-                            </div>
-                    </section>
+<body>
+    <header>
+        <h1 id="title"><a href="/">SHELLNET</a></h1>
+    </header>
+    <div id="main-container">
+        <div id="body">
+            <!-- swanson was here -->
+            <!--
+             .==.
+          __/-^-^\
+         (' )^-^-^\)
+          `^UU^^UU^
+		    -->
+            <div class="tab_container container">
+                {{ if (index .TData "message") }}
+                {{ if (index .TData "message" "error") }}
+                <div class="alert error">
+                    <input type="checkbox" id="alert1" />
+                    <label class="close" title="close" for="alert1">&times
+                    </label>
+                    <p class="inner">
+                        <strong>Error!</strong> {{ index .TData "message" "error"}}
+                    </p>
                 </div>
+                {{ end }}
+                {{ if (index .TData "message" "success") }}
+                <div class="alert success">
+                    <input type="checkbox" id="alert1" />
+                    <label class="close" title="close" for="alert1">&times
+                    </label>
+                    <p class="inner">
+                        <strong>Success!</strong> {{ index .TData "message" "success" }}
+                    </p>
+                </div>
+                {{ end }}
+                {{ end }}
+                <input id="tab1" type="radio" name="tabs" {{ if eq (index .TData "element") "login" }}checked{{ end }}>
+                <label for="tab1"><span>Login</span></label>
+
+                <input id="tab2" type="radio" name="tabs" {{ if eq (index .TData "element") "signup" }}checked{{ end }}>
+                <label for="tab2"><span>Signup</span></label>
+
+                <section id="content1" class="tab-content">
+                    <div class="container">
+                        <h1 class="center-text">Log Into Your Account</h1>
+                        <form action={{ printf "%s%s" (index .TData "uri") "/login" }} method="POST">
+                            <div class="input-field grey-input">
+                                <span class="user-icon"></span>
+                                <input type="text" name="username" placeholder="username" autofocus=""
+                                    pattern="^.{1,64}$" required />
+                            </div>
+
+                            <div class="input-field grey-input">
+                                <span class="lock-icon"></span>
+                                <input type="password" name="password" placeholder="password" required />
+                            </div>
+                            <p>Type the numbers you see in the picture below:</p>
+                            <p><img id=image src="/captcha/{{ (index .TData "captchaID") }}.png" alt="Captcha image">
+                            </p>
+                            <a href="#" onclick="reload()">Reload</a>
+                            <input type=hidden name=captchaID value="{{ (index .TData "captchaID") }}"><br>
+                            <div class="input-field grey-input">
+                                <input type="text" name=captchaSolution>
+                                <button class="btn btn-primary button-green">Login</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <section id="content2" class="tab-content">
+                    <div class="container">
+                        <h1 class="center-text">Create a New Account</h1>
+                        <form action={{ printf "%s%s" (index .TData "uri") "/signup" }} method="POST">
+                            <div class="input-field grey-input">
+                                <span class="user-icon"></span>
+                                <input type="text" name="username" placeholder="username" autofocus=""
+                                    pattern="^.{1,64}$" required />
+                            </div>
+
+                            <div class="input-field grey-input">
+                                <span class="lock-icon"></span>
+                                <input type="password" name="password" placeholder="password - 8 characters minimum" pattern="^.{8,}$" required />
+                            </div>
+                            <div class="input-field grey-input">
+                                <span class="lock-icon"></span>
+                                <input type="password" name="verify_password" placeholder="verify password" pattern="^.{8,}$" required />
+                            </div>
+                            <p>Type the numbers you see in the picture below:</p>
+                            <p><img id=image2 src="/captcha/{{ (index .TData "captchaID") }}.png" alt="Captcha image">
+                            </p>
+                            <a href="#" onclick="reload()">Reload</a>
+                            <input type=hidden name=captchaID value="{{ (index .TData "captchaID") }}"><br>
+                            <div class="input-field grey-input">
+                                <input type="text" name=captchaSolution>
+                                <p>By using Shellnet, you are agreeing to our <a href="#tos-modal">Terms of Service</a>
+                                </p>
+                                <button class="btn btn-primary button-green">Signup</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
             </div>
-            <footer class="footer">
-                <code>Shellnet &copy; 2019</code>
-            </footer>
         </div>
-    </body>
+    </div>
+    <footer>
+        <a href="https://github.com/anonanonymous/shellnet">Github</a>
+        &nbsp;
+        <a href="https://docs.turtlecoin.lol/guides/wallets/Using-Shellnet">Docs</a>
+        &nbsp;
+        <a href="https://discord.gg/C2as5Yt">Contact</a>
+        &nbsp;
+        <a href="#donate-modal">Donate</a>
+        &nbsp;
+    </footer>
+    <div class="light-modal" id="donate-modal" role="dialog" aria-labelledby="light-modal-label" aria-hidden="false">
+        <div class="light-modal-content">
+            <a href="#" class="light-modal-close-icon" aria-label="close">&times;</a>
+            <div class="light-modal-body">
+                <p>Please donate to support the development and operation of Shellnet</p>
+                <p style="word-break: break-all;">TRTLuwxCr6w3pVUcSW1UkbjiCccYknCrN88CuKq9xWLccKTpJDoWQXgcfsazXLpmSzBhcTg8Pb8XgSiiBjDpxfHq7MmHECa1CHg
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="light-modal" id="tos-modal" role="dialog" aria-labelledby="light-modal-label" aria-hidden="false">
+        <div class="light-modal-content">
+            <a href="#" class="light-modal-close-icon" aria-label="close">&times;</a>
+            <div class="light-modal-body">
+                <p style="word-wrap: break-word;">
+                <b>Terms of Service</b>
+                <hr>
+                Shellnet is in alpha testing. By using this service, you acknowledge that you are using a product that is in development. User assumes all risks for use, including risks of loss. By using our service, you signify that you accept these Terms of use and that you agree to be bound by them. If you do not agree with any part of these Terms of use, please refrain from using the service.
+                <br><br>
+                Cookies
+                <br>
+                By using Shellnet, you consent to the use of cookies. Most of the modern day interactive web sites use cookies to enable us to retrieve user details for each visit.
+                <br><br>
+                Privacy
+                <br>
+                Each address on Shellnet shares the same view key. Since it is possible to correlate the transactions in a block to a specific TurtleCoin address, your transactions are not completely private.
+                <br><br>
+                Viruses and other harmful intentions
+                <br>
+                You must not misuse our service by knowingly introducing viruses, trojans, worms, logic bombs or other material which is malicious or technologically harmful. You must not attempt to gain unauthorised access to our service, the server on which our service is stored or any server, computer or database connected to our service. You must not attack our service via a denial-of-service attack or a distributed denial-of service attack.
+                We will not be liable for any loss or damage caused by a distributed denial-of-service attack, viruses or other technologically harmful material that may infect your computer equipment, computer programs, data or other proprietary material due to your use of our service or to your downloading of any material posted on it, or on any website linked to it.
+                <br><br>
+                Changes to these terms of use
+                <br>
+                We may revise these terms of use at any time by amending this page. You are expected to check this page from time to time to take notice of any changes we made, as they are binding on you. Some of the provisions contained in these terms of use may also be superseded by provisions or notices published elsewhere on our service.
+                <br><br>
+                Contact us
+                <hr>
+                 If you have any questions, concerns and ideas about material which appears on our service, please contact us at https://discord.gg/C2as5Yt
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+
 </html>

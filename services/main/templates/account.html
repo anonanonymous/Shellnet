@@ -1,132 +1,239 @@
-{{ template "header" }}
-<div class="title center-text">
-    <span>SHELLNET</span>
-</div>
-<div class="table-container">
-  <div class="checkbox-modal">
-    <a href="/logout">logout</a>
-    <!--<a href="/account/delete" id="delete_button">delete account</a>-->
-    <input type="checkbox" id="export_keys" required>
-    <label for="export_keys">export keys</label>
-    <label for="export_keys" class="screen-close"></label>
-    <div class="modal-content">
-      <h2>Enter your password</h2>
-      <form action="{{ printf "%s%s" .PageAttr.URI "/account/export_keys" }}" method="POST">
-        <div class="input-field grey-input">
-            <span class="lock-icon"></span>
-            <input type="password" name="password" placeholder="password" required/>
+<!doctype html>
+<html>
+
+<head>
+  <title>Shellnet</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="/assets/js/utils.js"></script>
+  <script src="/assets/js/account.js"></script>
+  <link rel="icon" href="/assets/images/fav_icon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="https://unpkg.com/unnamed" />
+  <link rel="stylesheet" href="/assets/css/light-modal.min.css" />
+  <link rel="stylesheet" href="/assets/css/widgets.css" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/account.css" />
+</head>
+
+<body>
+  <header>
+    <h1 id="title"><a href="/">SHELLNET</a></h1>
+  </header>
+  <div id="main-container">
+    <div id="body">
+      <div class="table-container">
+        <div class="checkbox-modal">
+          <a href="/logout">logout</a>
+          <!--<a href="/account/delete" id="delete_button">delete account</a>-->
+          <input type="checkbox" id="export_keys" required>
+          <label for="export_keys">export keys</label>
+          <label for="export_keys" class="screen-close"></label>
+          <div class="modal-content">
+            <h2>Enter your password</h2>
+            <form action="{{ printf "%s%s" (index .TData "uri") "/account/export_keys" }}" method="POST">
+              <div class="input-field grey-input">
+                <span class="lock-icon"></span>
+                <input type="password" name="password" placeholder="password" required />
+              </div>
+              <button class="btn btn-primary button-green">Confirm</button>
+            </form>
+          </div>
+
+          <div class="checkbox-modal" id="delete_button">
+            <input type="checkbox" id="delete" required>
+            <label for="delete">delete account</label>
+            <label for="delete" class="screen-close"></label>
+            <div class="modal-content">
+              <h2>Delete Account</h2>
+              <p>Your account and wallet will be removed. Save your wallet keys before account deletion!!</p>
+              <form action="{{ printf "%s%s" (index .TData "uri") "/account/delete" }}" method="POST">
+                <button class="btn btn-primary button-green">Confirm</button>
+              </form>
+            </div>
+          </div>
         </div>
-        <button class="btn btn-primary button-green">Confirm</button>
-      </form>
-    </div>
- 
-    <div class="checkbox-modal" id="delete_button">
-      <input type="checkbox" id="delete" required>
-      <label for="delete">delete account</label>
-      <label for="delete" class="screen-close"></label>
-      <div class="modal-content">
-        <h2>Delete Account</h2>
-        <p>Your account and wallet will be removed. Save your wallet keys before account deletion!!</p>
-        <form action="{{ printf "%s%s" .PageAttr.URI "/account/delete" }}" method="POST">
-          <button class="btn btn-primary button-green">Confirm</button>
+        <hr>
+        <div id="wallet_status" class="{{ (index .TData "wallet_icon") }}">
+          <span class="caret-icon"></span>&nbsp;status<span>
+        </div>
+        <strong>Block:&nbsp;</strong><span
+          id="block_count">{{ printf "%d/%d" (index .TWallet.Status.WalletBlockCount) (index .TWallet.Status.BlockCount) }}</span>
+        <h2>Wallet Info</h2>
+        <table>
+          <tbody>
+            <tr>
+              <th>Name</th>
+              <td>{{ .TUser.Username }}</td>
+            </tr>
+            <tr>
+              <th>Available</th>
+              <td><span id="available_balance">{{ printf "%.2f" (index .TWallet.Balance.Unlocked) }}</span> TRTL</td>
+            </tr>
+            <tr>
+              <th>Locked / Unconfirmed</th>
+              <td><span id="locked_amount">{{ printf "%.2f" (index .TWallet.Balance.Locked) }}</span> TRTL</td>
+            </tr>
+            <tr>
+              <th>Address</th>
+              <td>
+                <trtl id="address">{{ .TUser.Address }}</trtl>
+                <button onclick="copy_ele('address')" title="copy address">
+                  <i class="fa fa-copy"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-container">
+        <form action={{ printf "%s%s" (index .TData "uri") "/account/send_transaction"}} method="POST">
+          <div class="input-field grey-input">
+            <h2>Send Transaction</h2><br>
+            <span class="caret-icon"></span>
+            <input id="send_to" type="text" name="destination" placeholder="Enter destination address..."
+              pattern="^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})\s*$" {{ if index .TData "url_params" "address"}}
+              value="{{ index .TData "url_params" "address" 0 }}" {{ end }} required />
+            <span class="amount-icon"></span>
+            <input id="send_amount" type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.{0,1}\d{0,2}$"
+              {{ if index .TData "url_params" "amount"}} value="{{ index .TData "url_params" "amount" 0 }}" {{ end }}
+              required />
+            <span class="paymentid-icon"></span>
+            <input id="s_paymentid" type="text" name="payment_id" placeholder="Enter Payment ID..."
+              pattern="^[a-fA-F\d]{64}$" {{ if index .TData "url_params" "paymentid"}}
+              value="{{ index .TData "url_params" "paymentid" 0 }}" {{ end }} />
+            <span class="edit-icon"></span>
+          </div>
+          <div class="checkbox-modal">
+            <input type="checkbox" id="send" onchange="confirmation()" required>
+            <label for="send" class="btn btn-primary button-green">Send</label>
+            <label for="send" class="screen-close"></label>
+            <div class="modal-content">
+              <h2>Confirm Transaction</h2>
+              <noscript>
+                <p>Press confirm to send.</p>
+              </noscript>
+              <p id="send_confirmation">
+              </p>
+              <button class="btn btn-primary button-green">Confirm</button>
+            </div>
+          </div>
         </form>
+        {{ if (index .TData "txHash") }}
+        <div class="alert success">
+          <input type="checkbox" id="alert1" />
+          <label class="close" title="close" for="alert1">&times
+          </label>
+          <p class="inner"><b>Transaction Hash</b>
+            {{ (index .TData "txHash") }}
+          </p>
+        </div>
+        {{ end }}
+        {{ if (index .TData "error") }}
+        <div class="alert error">
+          <input type="checkbox" id="alert1" />
+          <label class="close" title="close" for="alert1">&times
+          </label>
+          <p class="inner"><b>Error</b>
+            {{ (index .TData "error") }}
+          </p>
+        </div>
+        {{ end }}
       </div>
-    </div>
-  </div>
-  <hr>
-  <div id="wallet_status"  class="{{ index .PageAttr.Messages "wallet_icon"}}">
-    <span class="caret-icon"></span>&nbsp;status<span>
-  </div>
-  <strong>Block:&nbsp;</strong><span id="block_count">{{ index .Wallet "status" "blockCount"}}/{{ index .Wallet "status" "knownBlockCount" }}</span>
-  <h2>Wallet Info</h2>
-  <table>
-    <tbody>
-      <tr>
-        <th>Name</th>
-        <td>{{ .User.Username }}</td>
-      </tr>
-      <tr>
-        <th>Available</th>
-        <td><span id="available_balance">{{ printf "%.2f" (index .Wallet "balance" "availableBalance") }}</span> TRTL</td>
-      </tr>
-      <tr>
-        <th>Locked / Unconfirmed</th>
-        <td><span id="locked_amount">{{ printf "%.2f" (index .Wallet "balance" "lockedAmount") }}</span> TRTL</td>
-      </tr>
-      <tr>
-        <th>Address</th>
-        <td>
-          <trtl id="address">{{ .User.Address }}</trtl>
-          <button onclick="copy_ele('address')" title="copy address">
-            <i class="fa fa-copy"></i>
-          </button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-<div class="table-container">
-    <form action={{ printf "%s%s" .PageAttr.URI "/account/send_transaction"}} method="POST">
-      <div class="input-field grey-input">
-        <h2>Send Transaction</h2><small>fee: 10.1 TRTL</small><br>
-        <span class="caret-icon"></span>
-        <input id="send_to" type="text" name="destination" placeholder="Enter destination address..." pattern="^TRTL([a-zA-Z0-9]{95}|[a-zA-Z0-9]{183})\s*$" required/>
-        <span class="amount-icon"></span>
-        <input id="send_amount" type="text" name="amount" placeholder="Enter Amount.." pattern="^\d+\.{0,1}\d{0,2}$" required/>
-        <span class="paymentid-icon"></span>
-        <input id="s_paymentid" type="text" name="payment_id" placeholder="Enter Payment ID..." pattern="^[a-fA-F\d]{64}$"/>
-	<span class="edit-icon"></span>
-        <input type="text" name="message" placeholder="Enter Message..." pattern="^*{128}$"/>
-      </div>
-      <div class="checkbox-modal">
-        <input type="checkbox" id="send" onchange="confirmation()" required>
-        <label for="send" class="btn btn-primary button-green">Send</label>
-        <label for="send" class="screen-close"></label>
-        <div class="modal-content">
-          <h2>Confirm Transaction</h2>
-          <p id="send_confirmation"><!--You are sending <strong id="amount"></strong> to--></p>
-          <button class="btn btn-primary button-green">Confirm</button>
+      {{ $length := (len (index .TData "transactions")) }}{{ if gt $length 0 }}
+      <div class="container tx">
+        <h2>Latest Transactions</h2>
+        <div class="tx">
+          <table class="tx">
+            <tbody>
+              {{ range $idx, $ele := (index .TData "transactions") }}
+              <tr>
+                {{ if lt $ele.Amount "0" }}
+                <td><b>Withdrawal</b><br></td>
+                {{ else }}
+                <td><strong>Deposit</strong></td>
+                {{ end }}
+		<td><b>Hash</b><br><a href="https://explorer.turtlecoin.lol/transaction.html?hash={{ $ele.Hash }}">{{ $ele.Hash }} </a><br><b>PaymentId</b><br>"{{ index $ele.PaymentID }}"</td>
+                <td><b>Amount</b><br>{{ index $ele.Amount }}&nbsp;TRTL</td>
+              </tr>
+              {{ end }}
+            </tbody>
+          </table>
         </div>
       </div>
-    </form>
-    {{ if index .PageAttr.Messages "txHash" }}
-    <div class="alert success">
-        <input type="checkbox" id="alert1"/>
-        <label class="close" title="close" for="alert1">&times
-        </label>
-        <p class="inner">
-        <strong class="center-text">Transaction Hash</strong> {{ index .PageAttr.Messages "txHash" }}
-        </p>
+     {{ end }}
     </div>
-    {{ end }}
   </div>
-</div>
-
-<div class="container tx">
-  <h2>Latest Transactions</h2>
-  <div class="tx">
-    <table class="tx">
-      <tbody>
-        {{ range $idx, $ele := (index .Transactions "transactions") }}
-        <tr>
-          {{ if (index $ele "Destination") }}
-          <td><b>Withdrawal</b><br></td>
-          <td><b>Recipient</b><br>{{ index $ele "Destination" }}<br><b>Hash</b><br>{{ index $ele "Hash" }}<br><b>PaymentId</b><br>"{{ index $ele "PaymentID"}}"</td>
-          <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
-          {{ else }}
-          <td><strong>Deposit</strong></td>
-          <td><b>Hash</b><br>{{ index $ele "Hash" }}<br><b>PaymentId</b><br>"{{ index $ele "PaymentID"}}"</td>
-          <td><b>Amount</b><br>{{ index $ele "Amount" }}&nbsp;TRTL</td>
-          {{ end }}
-        </tr>
-        {{ end }}
-      </tbody>
-    </table>
+  <footer>
+    <a href="https://github.com/anonanonymous/shellnet">Github</a>
+    &nbsp;
+    <a href="https://docs.turtlecoin.lol/guides/wallets/Using-Shellnet">Docs</a>
+    &nbsp;
+    <a href="https://discord.gg/C2as5Yt">Contact</a>
+    &nbsp;
+    <a href="#donate-modal">Donate</a>
+    &nbsp;
+  </footer>
+  <div class="light-modal" id="donate-modal" role="dialog" aria-labelledby="light-modal-label" aria-hidden="false">
+    <div class="light-modal-content">
+      <a href="#" class="light-modal-close-icon" aria-label="close">&times;</a>
+      <div class="light-modal-body">
+        <p>Please donate to support the development and operation of Shellnet</p>
+        <p style="word-break: break-all;">
+          TRTLuwxCr6w3pVUcSW1UkbjiCccYknCrN88CuKq9xWLccKTpJDoWQXgcfsazXLpmSzBhcTg8Pb8XgSiiBjDpxfHq7MmHECa1CHg
+        </p>
+      </div>
+    </div>
   </div>
-</div>
+  <div class="light-modal" id="tos-modal" role="dialog" aria-labelledby="light-modal-label" aria-hidden="false">
+    <div class="light-modal-content">
+      <a href="#" class="light-modal-close-icon" aria-label="close">&times;</a>
+      <div class="light-modal-body">
+        <p style="word-wrap: break-word;">
+          <b>Terms of Service</b>
+          <hr>
+          Shellnet is in alpha testing. By using this service, you acknowledge that you are using a product
+          that is in development. User assumes all risks for use, including risks of loss. By using our
+          service, you signify that you accept these Terms of use and that you agree to be bound by them. If
+          you do not agree with any part of these Terms of use, please refrain from using the service.
+          <br><br>
+          Cookies
+          <br>
+          By using Shellnet, you consent to the use of cookies. Most of the modern day interactive web sites
+          use cookies to enable us to retrieve user details for each visit.
+          <br><br>
+          Privacy
+          <br>
+          Each address on Shellnet shares the same view key. Since it is possible to correlate the
+          transactions in a block to a specific TurtleCoin address, your transactions are not completely
+          private.
+          <br><br>
+          Viruses and other harmful intentions
+          <br>
+          You must not misuse our service by knowingly introducing viruses, trojans, worms, logic bombs or
+          other material which is malicious or technologically harmful. You must not attempt to gain
+          unauthorised access to our service, the server on which our service is stored or any server,
+          computer or database connected to our service. You must not attack our service via a
+          denial-of-service attack or a distributed denial-of service attack.
+          We will not be liable for any loss or damage caused by a distributed denial-of-service attack,
+          viruses or other technologically harmful material that may infect your computer equipment, computer
+          programs, data or other proprietary material due to your use of our service or to your downloading
+          of any material posted on it, or on any website linked to it.
+          <br><br>
+          Changes to these terms of use
+          <br>
+          We may revise these terms of use at any time by amending this page. You are expected to check this
+          page from time to time to take notice of any changes we made, as they are binding on you. Some of
+          the provisions contained in these terms of use may also be superseded by provisions or notices
+          published elsewhere on our service.
+          <br><br>
+          Contact us
+          <hr>
+          If you have any questions, concerns and ideas about material which appears on our service, please
+          contact us at https://discord.gg/C2as5Yt
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
 
-<input style="bottom: 100%; position: absolute;" id="temp_input" readonly></input>
-<script>
-setPaymentForm();
-</script>
-{{ template "footer" }}
+</html>

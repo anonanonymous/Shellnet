@@ -83,7 +83,7 @@ In `printf "%.2f"`, 2f is the number of decimal places to display. To show 4 dec
 ```
 ```html
 <div class="table-container">
-    <form action={{ printf "%s%s" .PageAttr.URI "/account/send_transaction"}} method="POST">
+    <form action={{ printf "%s%s" (index .TData "uri") "/account/send_transaction"}} method="POST">
         <div class="input-field grey-input">
             <h2>Send Transaction</h2><small>fee: 0.1 TRTL</small><br>
             <span class="caret-icon"></span>

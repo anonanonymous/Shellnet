@@ -25,12 +25,9 @@ func main() {
 	}
 
 	InitHandlers(router)
-
-	/* https to http redirection
+	//IhitAPI(router)
+	/* https to http redirection */
 	go http.ListenAndServe(":80", http.HandlerFunc(httpsRedirect))
-	log.Println("Info: Starting Service on:", hostURI)
-	log.Fatal(srv.ListenAndServeTLS("fullchain.pem", "privkey.pem"))
-	*/
 	log.Println("Info: Starting Service on:", hostURI)
 	log.Fatal(srv.ListenAndServe())
 }

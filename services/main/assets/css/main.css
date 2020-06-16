@@ -1,67 +1,121 @@
-html,
-body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+* {
+  box-sizing: border-box;
 }
 
 body {
-  align-items: center;
   display: flex;
+  min-height: 100vh;
   flex-direction: column;
-}
-.full-container {
-  display: flex;
-  flex-direction: column;
-  background: url('/assets/images/background.svg'); /* Designed by Freepik */
+  margin: 0;
+  padding: 0;
+  background: url(/assets/images/background.svg);
   background-size: cover;
   background-position-y: center;
-  height: 100%;
-  width: 100%;
 }
-.header {
+header {
   display: flex;
-  padding: 5px 0;
-  justify-content: center;
-  font-size: 26px;
   background-color: rgba(0,0,0,0.85);
-  color: #EEE;
-}
-.footer {
-  display: flex;
+  padding: 5px;
   justify-content: center;
+}
+footer {
+  border: 1px solid black;
+  padding: 10px;
+  color: white;
   background-color: rgba(0,0,0,0.85);
-  color: #EEE;
-  padding: 6px;
 }
-.title {
-    font-family: monospace;
-    width: 100%;
+
+pre, code {
+    background-color: #eee;
+    border-radius: 3px;
+    font-family: courier, monospace;
 }
-.landing-title {
-  color: #F7F7F7;
-  font-size: 36px;
-  text-align: center;
-  padding: 16px;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+
+pre {
+    overflow: auto;
+    margin: 0;
+    padding-bottom: 16px;
+	word-break: break-all;
+    white-space: pre-wrap;
 }
-.content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+
+code {
+	display: inline;
+	overflow: visible;
+    padding: 0;
+    line-height: inherit;
+}
+
+a {
+    text-decoration: none;
+}
+
+/* unvisited link */
+a:link {
+  color: white;
+}
+
+/* visited link */
+a:visited {
+  color: white;
+}
+
+/* mouse over link */
+a:hover {
+  color: red;
+}
+
+/* selected link */
+a:active {
+  color: blue;
+}
+
+#main-container {
   flex: 1;
-  align-items: center;
-  background-color: rgba(0,0,0,0.4);
 }
-.content-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.7);
-  max-width: 300px;
-  padding: 16px 16px 24px 16px;
+#main-container > #body {
+  flex: 1;
+  margin: 10px;
+  padding: 10px;
 }
+#main-container > #sidebars {
+  flex: none;
+  flex-basis: 380px;
+}
+#main-container > #sidebars > aside {
+  min-height: 200px;
+  margin: 10px;
+  border: 1px solid black;
+  border-radius: 4px;
+  padding: 10px;
+}
+#logo {
+  height: 100%;
+  width: 225px;
+  background: url('');
+  background-repeat: no-repeat;
+  background-size: contain;
+  cursor: pointer;
+}
+#logo > a {
+    height: 100%;
+    width: 100%;
+    display: block;
+}
+#settings {
+  background: orange;
+  height: auto;
+  width: -webkit-fill-available;
+  width: -moz-available;
+}
+
+#title {
+	padding: 0;
+  margin: 0;
+  color: white;
+  font-family: monospace;
+}
+
 .tagline {
   color: #F7F7F7;
   font-size: 18px;
@@ -70,23 +124,6 @@ body {
   text-align: center;
   justify-content: center;
   text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
-}
-.button-wrapper {
-  flex: 1;
-}
-.button-green {
-  background-color: #04A148;
-}
-.button-green:hover {
-  color: #FEFEFE !important;
-  background-color: #04AE4D;
-}
-.btn-primary {
-  margin: 10px 0px;
-  min-width: 180px;
-}
-.btn-primary:hover {
-  color: #FF9D49;
 }
 .signup-link {
   padding: 8px !important;
@@ -102,25 +139,51 @@ body {
   text-align: center;
   text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
 }
-.landing-logo {
-    height: 40px;
-    width: auto;
-    margin-top: 16px;
-    margin-bottom: 4px;
+.landing-title {
+  color: #F7F7F7;
+  font-size: 36px;
+  text-align: center;
+  padding: 16px;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
 }
-.brand-header {
-    background: rgba(0,0,0,0.8);
+.content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  align-items: center;
+}
+.content-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.7);
+  padding: 16px 16px 24px 16px;
+}
+.signup-link {
+  padding: 8px !important;
+  color: #FEFEFE;
+}
+.signup-link:hover {
+  color: #04A148;
+}
+.button-green {
+  background-color: #04A148;
+}
+.button-green:hover {
+  color: #FEFEFE !important;
+  background-color: #04AE4D;
+}
+.btn-primary {
+  margin: 10px 0px;
+  min-width: 180px;
+}
+.btn-primary:hover {
+  color: #FF9D49;
+}
+@media only screen and (min-width: 940px) {
+  #main-container {
     display: flex;
-    flex-direction: row;
-    flex-shrink: 0;
-    flex-grow: 0;
-    box-sizing: border-box;
-    width: 100%;
-    justify-content: center;
-    align-items: center;
-    padding: 8px;
-}
-.brand-header-logo {
-    height: 36px;
-    width: auto;
+  }
 }
